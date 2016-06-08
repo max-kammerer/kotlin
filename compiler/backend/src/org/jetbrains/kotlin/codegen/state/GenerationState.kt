@@ -28,6 +28,8 @@ import org.jetbrains.kotlin.codegen.context.RootContext
 import org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension
 import org.jetbrains.kotlin.codegen.inline.InlineCache
 import org.jetbrains.kotlin.codegen.intrinsics.IntrinsicMethods
+import org.jetbrains.kotlin.codegen.llvm.LLVMClassBuilderFactory
+import org.jetbrains.kotlin.codegen.llvm.LLVMState
 import org.jetbrains.kotlin.codegen.optimization.OptimizationClassBuilderFactory
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -156,20 +158,24 @@ class GenerationState @JvmOverloads constructor(
 
     val rootContext: CodegenContext<*> = RootContext(this)
 
+    val llvmState = LLVMState()
+
     init {
         this.interceptedBuilderFactory = builderFactory
                 .wrapWith(
-                    { OptimizationClassBuilderFactory(it, configuration.get(JVMConfigurationKeys.DISABLE_OPTIMIZATION, false)) },
-                    { BuilderFactoryForDuplicateSignatureDiagnostics(
+                        { OptimizationClassBuilderFactory(it, configuration.get(JVMConfigurationKeys.DISABLE_OPTIMIZATION, false)) },
+                        { BuilderFactoryForDuplicateSignatureDiagnostics(
                             it, this.bindingContext, diagnostics, fileClassesProvider, incrementalCacheForThisTarget, this.moduleName
                       ).apply { duplicateSignatureFactory = this } },
-                    { BuilderFactoryForDuplicateClassNameDiagnostics(it, diagnostics) },
-                    { configuration.get(JVMConfigurationKeys.DECLARATIONS_JSON_PATH)
+                        { BuilderFactoryForDuplicateClassNameDiagnostics(it, diagnostics) },
+                        { configuration.get(JVMConfigurationKeys.DECLARATIONS_JSON_PATH)
                               ?.let { destination -> SignatureDumpingBuilderFactory(it, File(destination)) } ?: it }
                 )
                 .wrapWith(ClassBuilderInterceptorExtension.getInstances(project)) { builderFactory, extension ->
                     extension.interceptClassBuilderFactory(builderFactory, bindingContext, diagnostics)
-                }
+                }.wrapWith(
+                { if (it.classBuilderMode == ClassBuilderMode.FULL) LLVMClassBuilderFactory(llvmState, it) else it }
+        )
 
         this.factory = ClassFileFactory(this, interceptedBuilderFactory)
     }

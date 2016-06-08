@@ -125,7 +125,7 @@ public class ClassBuilderFactories {
     private ClassBuilderFactories() {
     }
 
-    private static class BinaryClassWriter extends ClassWriter {
+    public static class BinaryClassWriter extends ClassWriter {
         public BinaryClassWriter() {
             super(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         }
