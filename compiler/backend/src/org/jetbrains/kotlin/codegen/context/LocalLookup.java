@@ -68,7 +68,7 @@ public interface LocalLookup {
                 Type type = sharedVarType != null ? sharedVarType : localType;
 
                 String fieldName = "$" + vd.getName();
-                StackValue.Local thiz = StackValue.LOCAL_0;
+                StackValue.Local thiz = StackValue.local0();
 
                 StackValue.StackValueWithSimpleReceiver innerValue;
                 EnclosedValueDescriptor enclosedValueDescriptor;
@@ -128,12 +128,12 @@ public interface LocalLookup {
                 if (localFunClosure != null && JvmCodegenUtil.isConst(localFunClosure)) {
                     // This is an optimization: we can obtain an instance of a const closure simply by GETSTATIC ...$instance
                     // (instead of passing this instance to the constructor and storing as a field)
-                    return StackValue.field(localType, localType, JvmAbi.INSTANCE_FIELD, true, StackValue.LOCAL_0, vd);
+                    return StackValue.field(localType, localType, JvmAbi.INSTANCE_FIELD, true, StackValue.local0(), vd);
                 }
 
                 String fieldName = "$" + vd.getName();
                 StackValue.StackValueWithSimpleReceiver innerValue = StackValue.field(localType, classType, fieldName, false,
-                                                                                      StackValue.LOCAL_0, vd);
+                                                                                      StackValue.local0(), vd);
 
                 closure.recordField(fieldName, localType);
                 closure.captureVariable(new EnclosedValueDescriptor(fieldName, d, innerValue, localType));
@@ -163,7 +163,7 @@ public interface LocalLookup {
                 KotlinType receiverType = closure.getEnclosingReceiverDescriptor().getType();
                 Type type = state.getTypeMapper().mapType(receiverType);
                 StackValue.StackValueWithSimpleReceiver innerValue = StackValue.field(type, classType, CAPTURED_RECEIVER_FIELD, false,
-                                                                                      StackValue.LOCAL_0, d);
+                                                                                      StackValue.local0(), d);
                 closure.setCaptureReceiver();
 
                 return innerValue;

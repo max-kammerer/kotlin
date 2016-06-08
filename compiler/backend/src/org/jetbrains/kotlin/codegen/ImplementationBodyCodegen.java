@@ -777,7 +777,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                                     : "Function container must have [data] modifier: " + function;
                             PropertyDescriptor property = bindingContext.get(BindingContext.VALUE_PARAMETER_AS_PROPERTY, valueParameter);
                             assert property != null : "Copy function doesn't correspond to any property: " + function;
-                            return codegen.intermediateValueForProperty(property, false, null, StackValue.LOCAL_0);
+                            return codegen.intermediateValueForProperty(property, false, null, StackValue.local0());
                         }
                     },
                     null
@@ -996,7 +996,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
                                            getDelegationConstructorCall(bindingContext, constructorDescriptor));
 
         if (isNonCompanionObject(descriptor)) {
-            StackValue.singletonViaInstance(descriptor, typeMapper).store(StackValue.LOCAL_0, iv);
+            StackValue.singletonViaInstance(descriptor, typeMapper).store(StackValue.local0(), iv);
         }
 
         for (KtSuperTypeListEntry specifier : myClass.getSuperTypeListEntries()) {
@@ -1255,7 +1255,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
 
             private void lookupInContext(@NotNull DeclarationDescriptor toLookup) {
-                context.lookupInContext(toLookup, StackValue.LOCAL_0, state, true);
+                context.lookupInContext(toLookup, StackValue.local0(), state, true);
             }
 
             @Override
@@ -1305,7 +1305,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         ClassDescriptor superClass = DescriptorUtilsKt.getSuperClassNotAny(descriptor);
         if (superClass != null) {
             if (superClass.isInner()) {
-                context.lookupInContext(superClass.getContainingDeclaration(), StackValue.LOCAL_0, state, true);
+                context.lookupInContext(superClass.getContainingDeclaration(), StackValue.local0(), state, true);
             }
 
             ConstructorDescriptor primaryConstructor = descriptor.getUnsubstitutedPrimaryConstructor();

@@ -300,7 +300,7 @@ public class AnonymousObjectTransformer extends ObjectTransformer<AnonymousObjec
                         oldObjectType,
                         fake.getNewFieldName(),
                         false,
-                        StackValue.LOCAL_0
+                        StackValue.local0()
                 );
                 fake.setRemapValue(composed);
             }
@@ -459,7 +459,7 @@ public class AnonymousObjectTransformer extends ObjectTransformer<AnonymousObjec
                             oldObjectType, /*TODO owner type*/
                             recapturedParamInfo.getNewFieldName(),
                             false,
-                            StackValue.LOCAL_0
+                            StackValue.local0()
                     );
                     recapturedParamInfo.setRemapValue(composed);
                     allRecapturedParameters.add(desc);
@@ -483,7 +483,7 @@ public class AnonymousObjectTransformer extends ObjectTransformer<AnonymousObjec
             CapturedParamDesc desc = new CapturedParamDesc(ownerType, InlineCodegenUtil.THIS, ownerType);
             CapturedParamInfo recapturedParamInfo =
                     capturedParamBuilder.addCapturedParam(desc, InlineCodegenUtil.THIS$0/*outer lambda/object*/, false);
-            StackValue composed = StackValue.LOCAL_0;
+            StackValue composed = StackValue.local0();
             recapturedParamInfo.setRemapValue(composed);
             allRecapturedParameters.add(desc);
 

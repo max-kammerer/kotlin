@@ -112,7 +112,7 @@ public class LambdaInfo implements LabelOwner {
                         new EnclosedValueDescriptor(
                                 AsmUtil.CAPTURED_THIS_FIELD,
                                 /* descriptor = */ null,
-                                StackValue.field(type, closureClassType, AsmUtil.CAPTURED_THIS_FIELD, false, StackValue.LOCAL_0),
+                                StackValue.field(type, closureClassType, AsmUtil.CAPTURED_THIS_FIELD, false, StackValue.local0()),
                                 type
                         );
                 capturedVars.add(getCapturedParamInfo(descriptor));
@@ -124,7 +124,7 @@ public class LambdaInfo implements LabelOwner {
                         new EnclosedValueDescriptor(
                                 AsmUtil.CAPTURED_RECEIVER_FIELD,
                                 /* descriptor = */ null,
-                                StackValue.field(type, closureClassType, AsmUtil.CAPTURED_RECEIVER_FIELD, false, StackValue.LOCAL_0),
+                                StackValue.field(type, closureClassType, AsmUtil.CAPTURED_RECEIVER_FIELD, false, StackValue.local0()),
                                 type
                         );
                 capturedVars.add(getCapturedParamInfo(descriptor));

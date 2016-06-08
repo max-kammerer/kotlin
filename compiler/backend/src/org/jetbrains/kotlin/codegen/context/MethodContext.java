@@ -71,7 +71,7 @@ public class MethodContext extends CodegenContext<CallableMemberDescriptor> {
             d = fieldDescriptor.getPropertyDescriptor();
         }
         if (getContextDescriptor() == d) {
-            return result != null ? result : StackValue.LOCAL_0;
+            return result != null ? result : StackValue.local0();
         }
 
         return getParentContext().lookupInContext(d, result, state, ignoreNoOuter);
@@ -83,7 +83,7 @@ public class MethodContext extends CodegenContext<CallableMemberDescriptor> {
             return getReceiverExpression(state.getTypeMapper());
         }
         ReceiverParameterDescriptor parameter = descriptor.getExtensionReceiverParameter();
-        return lookupInContext(parameter, StackValue.LOCAL_0, state, ignoreNoOuter);
+        return lookupInContext(parameter, StackValue.local0(), state, ignoreNoOuter);
     }
 
     @Override

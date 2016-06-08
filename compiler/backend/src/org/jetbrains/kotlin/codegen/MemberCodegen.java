@@ -391,7 +391,7 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
         KtExpression initializer = property.getDelegateExpressionOrInitializer();
         assert initializer != null : "shouldInitializeProperty must return false if initializer is null";
 
-        StackValue.Property propValue = codegen.intermediateValueForProperty(propertyDescriptor, true, false, null, true, StackValue.LOCAL_0);
+        StackValue.Property propValue = codegen.intermediateValueForProperty(propertyDescriptor, true, false, null, true, StackValue.local0());
 
         propValue.store(codegen.gen(initializer), codegen.v);
     }

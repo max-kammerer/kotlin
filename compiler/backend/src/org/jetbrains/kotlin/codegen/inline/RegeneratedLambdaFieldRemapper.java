@@ -90,7 +90,7 @@ public class RegeneratedLambdaFieldRemapper extends FieldRemapper {
         assert node.name.startsWith("$$$") : "Captured field template should start with $$$ prefix";
         if (node.name.equals("$$$" + InlineCodegenUtil.THIS)) {
             assert oldOwnerType.equals(node.owner) : "Can't unfold '$$$THIS' parameter";
-            return StackValue.LOCAL_0;
+            return StackValue.local0();
         }
 
         FieldInsnNode fin = new FieldInsnNode(node.getOpcode(), node.owner, node.name.substring(3), node.desc);
@@ -113,7 +113,7 @@ public class RegeneratedLambdaFieldRemapper extends FieldRemapper {
                 Type.getObjectType(parent.parent.getNewLambdaInternalName()) : field.getType(),
                 Type.getObjectType(getNewLambdaInternalName()), /*TODO owner type*/
                 field.getNewFieldName(), false,
-                prefix == null ? StackValue.LOCAL_0 : prefix
+                prefix == null ? StackValue.local0() : prefix
         );
 
         return searchInParent ? parent.getFieldForInline(node, result) : result;

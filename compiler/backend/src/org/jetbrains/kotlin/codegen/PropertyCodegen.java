@@ -476,7 +476,7 @@ public class PropertyCodegen {
         public void doGenerateBody(@NotNull ExpressionCodegen codegen, @NotNull JvmMethodSignature signature) {
             InstructionAdapter v = codegen.v;
             PropertyDescriptor propertyDescriptor = callableDescriptor.getCorrespondingProperty();
-            StackValue property = codegen.intermediateValueForProperty(propertyDescriptor, true, null, StackValue.LOCAL_0);
+            StackValue property = codegen.intermediateValueForProperty(propertyDescriptor, true, null, StackValue.local0());
 
             PsiElement jetProperty = DescriptorToSourceUtils.descriptorToDeclaration(propertyDescriptor);
             if (jetProperty instanceof KtProperty || jetProperty instanceof KtParameter) {
@@ -541,7 +541,7 @@ public class PropertyCodegen {
                 }
         );
 
-        StackValue delegatedProperty = codegen.intermediateValueForProperty(propertyDescriptor, true, null, StackValue.LOCAL_0);
+        StackValue delegatedProperty = codegen.intermediateValueForProperty(propertyDescriptor, true, null, StackValue.local0());
         return codegen.invokeFunction(resolvedCall, delegatedProperty);
     }
 

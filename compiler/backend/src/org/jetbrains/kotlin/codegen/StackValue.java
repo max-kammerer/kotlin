@@ -64,7 +64,7 @@ public abstract class StackValue {
     private static final String NULLABLE_SHORT_TYPE_NAME = "java/lang/Short";
     private static final String NULLABLE_LONG_TYPE_NAME = "java/lang/Long";
 
-    public static final StackValue.Local LOCAL_0 = local(0, OBJECT_TYPE);
+    private static final StackValue.Local LOCAL_0 = local(0, OBJECT_TYPE);
     private static final StackValue UNIT = operation(UNIT_TYPE, new Function1<InstructionAdapter, Unit>() {
         @Override
         public Unit invoke(InstructionAdapter v) {
@@ -145,6 +145,11 @@ public abstract class StackValue {
 
     protected void storeSelector(@NotNull Type topOfStackType, @NotNull InstructionAdapter v) {
         throw new UnsupportedOperationException("Cannot store to value " + this);
+    }
+
+
+    public static Local local0() {
+        return LOCAL_0;
     }
 
     @NotNull

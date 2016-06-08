@@ -317,7 +317,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         if (value.type != Type.VOID_TYPE && state.getReplSpecific().getShouldGenerateScriptResultValue()) {
             ScriptContext context = getScriptContext();
             if (expr == context.getLastStatement()) {
-                StackValue.Field resultValue = StackValue.field(context.getResultFieldInfo(), StackValue.LOCAL_0);
+                StackValue.Field resultValue = StackValue.field(context.getResultFieldInfo(), StackValue.local0());
                 resultValue.store(value, v);
                 state.getReplSpecific().setHasResult(true);
                 return;
@@ -2132,12 +2132,12 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             return lookupCapturedValueInConstructorParameters(descriptor);
         }
 
-        return context.lookupInContext(descriptor, StackValue.LOCAL_0, state, false);
+        return context.lookupInContext(descriptor, StackValue.local0(), state, false);
     }
 
     @Nullable
     private StackValue lookupCapturedValueInConstructorParameters(@NotNull DeclarationDescriptor descriptor) {
-        StackValue parentResult = context.lookupInContext(descriptor, StackValue.LOCAL_0, state, false);
+        StackValue parentResult = context.lookupInContext(descriptor, StackValue.local0(), state, false);
         if (context.closure == null || parentResult == null) return parentResult;
 
         int parameterOffsetInConstructor = context.closure.getCapturedParameterOffsetInConstructor(descriptor);
@@ -2611,7 +2611,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             if (DescriptorUtils.isCompanionObject(receiverDescriptor)) {
                 CallableMemberDescriptor contextDescriptor = context.getContextDescriptor();
                 if (contextDescriptor instanceof FunctionDescriptor && receiverDescriptor == contextDescriptor.getContainingDeclaration()) {
-                    return StackValue.LOCAL_0;
+                    return StackValue.local0();
                 }
                 else {
                     return StackValue.singleton(receiverDescriptor, typeMapper);
@@ -2645,7 +2645,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     @NotNull
     private StackValue generateScriptReceiver(@NotNull ScriptDescriptor receiver) {
         CodegenContext cur = context;
-        StackValue result = StackValue.LOCAL_0;
+        StackValue result = StackValue.local0();
         boolean inStartConstructorContext = cur instanceof ConstructorContext;
         while (cur != null) {
             if (!inStartConstructorContext) {
