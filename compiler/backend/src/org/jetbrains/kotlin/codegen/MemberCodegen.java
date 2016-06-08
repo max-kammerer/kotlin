@@ -343,7 +343,8 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
             DeclarationDescriptor contextDescriptor = context.getContextDescriptor();
             SimpleFunctionDescriptorImpl clInitDescriptor = createClInitFunctionDescriptor(contextDescriptor);
             MethodVisitor mv = createClInitMethodVisitor(contextDescriptor);
-            clInit = new ExpressionCodegen(mv, new FrameMap(), Type.VOID_TYPE, context.intoFunction(clInitDescriptor), state, this);
+            clInit = new ExpressionCodegen(mv, new FrameMap(), Type.VOID_TYPE, context.intoFunction(clInitDescriptor), state, this,
+                                           ByteCodeStackValueFactory.INSTANCE);
         }
         return clInit;
     }

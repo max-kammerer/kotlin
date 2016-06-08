@@ -116,7 +116,7 @@ class PropertyReferenceCodegen(
                                           classDescriptor.builtIns.anyType, Modality.OPEN, Visibilities.PUBLIC)
 
                 val fakeCodegen = ExpressionCodegen(
-                        this, FrameMap(), OBJECT_TYPE, context.intoFunction(fakeDescriptor), state, this@PropertyReferenceCodegen
+                        this, FrameMap(), OBJECT_TYPE, context.intoFunction(fakeDescriptor), state, this@PropertyReferenceCodegen, ByteCodeStackValueFactory
                 )
                 if (target is PropertyImportedFromObject) {
                     val containingObject = target.containingObject

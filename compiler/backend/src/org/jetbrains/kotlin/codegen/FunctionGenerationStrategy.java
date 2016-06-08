@@ -68,7 +68,8 @@ public abstract class FunctionGenerationStrategy {
                 @NotNull MethodContext context,
                 @NotNull MemberCodegen<?> parentCodegen
         ) {
-            ExpressionCodegen codegen = new ExpressionCodegen(mv, frameMap, signature.getReturnType(), context, state, parentCodegen);
+            ExpressionCodegen codegen = new ExpressionCodegen(mv, frameMap, signature.getReturnType(), context, state, parentCodegen,
+                                                              ByteCodeStackValueFactory.INSTANCE);
             doGenerateBody(codegen, signature);
         }
 

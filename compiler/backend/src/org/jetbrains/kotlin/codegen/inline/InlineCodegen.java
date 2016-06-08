@@ -840,7 +840,8 @@ public class InlineCodegen extends CallGenerator {
 
                 ExpressionCodegen finallyCodegen =
                         new ExpressionCodegen(finallyNode, codegen.getFrameMap(), codegen.getReturnType(),
-                                              codegen.getContext(), codegen.getState(), codegen.getParentCodegen());
+                                              codegen.getContext(), codegen.getState(), codegen.getParentCodegen(),
+                                              ByteCodeStackValueFactory.INSTANCE);
                 finallyCodegen.addBlockStackElementsForNonLocalReturns(codegen.getBlockStackElements(), curFinallyDepth);
 
                 FrameMap frameMap = finallyCodegen.getFrameMap();
