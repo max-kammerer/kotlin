@@ -13,5 +13,6 @@
     <orderEntry type="module" module-name="serialization" />
     <orderEntry type="module" module-name="backend-common" exported="" />
     <orderEntry type="module" module-name="util" />
+    <orderEntry type="library" name="llvm-j" level="project" />
   </component>
 </module>

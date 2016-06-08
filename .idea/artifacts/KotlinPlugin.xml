@@ -73,6 +73,7 @@
           <element id="module-output" name="lint-api" />
           <element id="module-output" name="uast-android" />
         </element>
+        <element id="library" level="project" name="llvm-j" />
       </element>
       <element id="directory" name="kotlinc">
         <element id="dir-copy" path="$PROJECT_DIR$/dist/kotlinc" />

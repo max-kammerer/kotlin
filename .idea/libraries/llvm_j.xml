@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="llvm-j">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/dependencies/llvm-j-0.1.0-SNAPSHOT.jar!/" />
+      <root url="jar://$PROJECT_DIR$/dependencies/bridj-0.6.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
