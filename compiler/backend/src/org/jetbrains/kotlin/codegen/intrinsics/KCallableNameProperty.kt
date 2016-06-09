@@ -36,6 +36,7 @@ class KCallableNameProperty : IntrinsicPropertyGetter() {
         return StackValue.operation(returnType) { iv ->
             iv.aconst(name)
             StackValue.coerce(AsmTypes.JAVA_STRING_TYPE, returnType, iv)
+            StackValue.none()
         }
     }
 }

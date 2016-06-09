@@ -32,7 +32,7 @@ open class BranchedValue(
         val opcode: Int
 ) : StackValue(Type.BOOLEAN_TYPE) {
 
-    override fun putSelector(type: Type, v: InstructionAdapter) {
+    override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
         val branchJumpLabel = Label()
         condJump(branchJumpLabel, v, true)
         val endLabel = Label()
@@ -42,6 +42,7 @@ open class BranchedValue(
         v.iconst(0)
         v.visitLabel(endLabel)
         coerceTo(type, v)
+        return none()
     }
 
     open fun condJump(jumpLabel: Label, v: InstructionAdapter, jumpIfFalse: Boolean) {
@@ -77,9 +78,10 @@ open class BranchedValue(
                 }
             }
 
-            override fun putSelector(type: Type, v: InstructionAdapter) {
+            override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
                 v.iconst(1)
                 coerceTo(type, v)
+                return none()
             }
         }
 
@@ -99,9 +101,10 @@ open class BranchedValue(
                 }
             }
 
-            override fun putSelector(type: Type, v: InstructionAdapter) {
+            override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
                 v.iconst(0)
                 coerceTo(type, v)
+                return none()
             }
         }
 
@@ -189,7 +192,7 @@ class Invert(val condition: BranchedValue) : BranchedValue(condition, null, Type
 
 class CondJump(val condition: BranchedValue, op: Int) : BranchedValue(condition, null, Type.BOOLEAN_TYPE, op) {
 
-    override fun putSelector(type: Type, v: InstructionAdapter) {
+    override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
         throw UnsupportedOperationException("Use condJump instead")
     }
 

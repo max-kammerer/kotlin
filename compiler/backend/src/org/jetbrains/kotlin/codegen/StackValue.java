@@ -66,11 +66,11 @@ public abstract class StackValue {
     private static final String NULLABLE_LONG_TYPE_NAME = "java/lang/Long";
 
     private static final StackValue.Local LOCAL_0 = local(0, OBJECT_TYPE);
-    private static final StackValue UNIT = operation(UNIT_TYPE, new Function1<InstructionAdapter, Unit>() {
+    private static final StackValue UNIT = operation(UNIT_TYPE, new Function1<InstructionAdapter, StackValue>() {
         @Override
-        public Unit invoke(InstructionAdapter v) {
+        public StackValue invoke(InstructionAdapter v) {
             v.visitFieldInsn(GETSTATIC, UNIT_TYPE.getInternalName(), JvmAbi.INSTANCE_FIELD, UNIT_TYPE.getDescriptor());
-            return null;
+            return none();
         }
     });
 
@@ -107,11 +107,10 @@ public abstract class StackValue {
         if (!skipReceiver) {
             putReceiver(v, true);
         }
-        putSelector(type, v);
-        return StackValue.none();
+        return putSelector(type, v);
     }
 
-    public abstract void putSelector(@NotNull Type type, @NotNull InstructionAdapter v);
+    public abstract StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v);
 
     public boolean isNonStaticAccess(boolean isRead) {
         return false;
@@ -220,19 +219,6 @@ public abstract class StackValue {
     @NotNull
     public static StackValue arrayElement(@NotNull Type type, StackValue array, StackValue index) {
         return new ArrayElement(type, array, index);
-    }
-
-    @NotNull
-    public static StackValue returnValue(@NotNull Type type, final StackValue value) {
-        return new StackValue(type) {
-            @Override
-            public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
-                if (value != null) {
-                    value.put(type, v);
-                }
-                v.areturn(type);
-            }
-        };
     }
 
     @NotNull
@@ -630,11 +616,11 @@ public abstract class StackValue {
         return field(FieldInfo.createSingletonViaInstance(classDescriptor, typeMapper), none());
     }
 
-    public static StackValue operation(Type type, Function1<InstructionAdapter, Unit> lambda) {
+    public static StackValue operation(Type type, Function1<InstructionAdapter, StackValue> lambda) {
         return new OperationStackValue(type, lambda);
     }
 
-    public static StackValue functionCall(Type type, Function1<InstructionAdapter, Unit> lambda) {
+    public static StackValue functionCall(Type type, Function1<InstructionAdapter, StackValue> lambda) {
         return new FunctionCallStackValue(type, lambda);
     }
 
@@ -650,8 +636,9 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             coerceTo(type, v);
+            return none();
         }
     }
 
@@ -668,10 +655,11 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             v.load(index, this.type);
             coerceTo(type, v);
             // TODO unbox
+            return none();
         }
 
         @Override
@@ -716,9 +704,10 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             getter.genInvokeInstruction(null);
             coerce(getter.getReturnType(), type, v);
+            return none();
         }
 
         @Override
@@ -746,8 +735,9 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             coerceTo(type, v);
+            return none();
         }
 
         @Override
@@ -803,7 +793,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             if (value instanceof Integer || value instanceof Byte || value instanceof Short) {
                 v.iconst(((Number) value).intValue());
             }
@@ -824,6 +814,7 @@ public abstract class StackValue {
             }
 
             coerceTo(type, v);
+            return none();
         }
     }
 
@@ -847,11 +838,12 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(
+        public StackValue putSelector(
                 @NotNull Type type, @NotNull InstructionAdapter v
         ) {
             v.aload(this.type);    // assumes array and index are on the stack
             coerceTo(type, v);
+            return none();
         }
     }
 
@@ -890,7 +882,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             ResolvedCall<?> call = isGetter ? resolvedGetCall : resolvedSetCall;
             StackValue newReceiver = StackValue.receiver(call, receiver, codegen, callable);
             ArgumentGenerator generator = createArgumentGenerator();
@@ -898,6 +890,7 @@ public abstract class StackValue {
             callGenerator.putHiddenParams();
 
             defaultArgs = generator.generate(valueArguments, valueArguments);
+            return none();
         }
 
         private ArgumentGenerator createArgumentGenerator() {
@@ -1035,13 +1028,14 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             if (getter == null) {
                 throw new UnsupportedOperationException("no getter specified");
             }
             CallGenerator callGenerator = getCallGenerator();
             callGenerator.genCall(getter, resolvedGetCall, genDefaultMaskIfPresent(callGenerator), codegen, Collections.<StackValue>emptyList());
             coerceTo(type, v);
+            return none();
         }
 
         private boolean genDefaultMaskIfPresent(CallGenerator callGenerator) {
@@ -1156,9 +1150,10 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             v.visitFieldInsn(isStaticPut ? GETSTATIC : GETFIELD, owner.getInternalName(), name, this.type.getDescriptor());
             coerceTo(type, v);
+            return none();
         }
 
         @Override
@@ -1202,11 +1197,11 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             if (getter == null) {
                 assert fieldName != null : "Property should have either a getter or a field name: " + descriptor;
                 assert backingFieldOwner != null : "Property should have either a getter or a backingFieldOwner: " + descriptor;
-                if (inlineJavaConstantIfNeeded(type, v)) return;
+                if (inlineJavaConstantIfNeeded(type, v)) return none();;
 
                 v.visitFieldInsn(isStaticPut ? GETSTATIC : GETFIELD,
                                  backingFieldOwner.getInternalName(), fieldName, this.type.getDescriptor());
@@ -1223,6 +1218,7 @@ public abstract class StackValue {
                     v.athrow();
                 }
             }
+            return none();
         }
 
         private boolean inlineJavaConstantIfNeeded(@NotNull Type type, @NotNull InstructionAdapter v) {
@@ -1310,8 +1306,8 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
-            generator.gen(expression, type);
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+            return generator.gen(expression, type);
         }
     }
 
@@ -1328,12 +1324,13 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             Type refType = refType(this.type);
             Type sharedType = sharedTypeForType(this.type);
             v.visitFieldInsn(GETFIELD, sharedType.getInternalName(), "element", refType.getDescriptor());
             coerceFrom(refType, v);
             coerceTo(type, v);
+            return none();
         }
 
         @Override
@@ -1379,12 +1376,13 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             Type sharedType = sharedTypeForType(this.type);
             Type refType = refType(this.type);
             v.visitFieldInsn(GETFIELD, sharedType.getInternalName(), "element", refType.getDescriptor());
             coerceFrom(refType, v);
             coerceTo(type, v);
+            return none();
         }
 
         @Override
@@ -1414,9 +1412,9 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             StackValue stackValue = codegen.generateThisOrOuter(descriptor, isSuper);
-            stackValue.put(coerceType ? type : stackValue.type, v);
+            return stackValue.put(coerceType ? type : stackValue.type, v);
         }
     }
 
@@ -1431,12 +1429,13 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             if (!type.equals(Type.VOID_TYPE)) {
                 v.load(index, Type.INT_TYPE);
                 coerceTo(type, v);
             }
             v.iinc(index, increment);
+            return none();
         }
     }
 
@@ -1451,12 +1450,13 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             v.iinc(index, increment);
             if (!type.equals(Type.VOID_TYPE)) {
                 v.load(index, Type.INT_TYPE);
                 coerceTo(type, v);
             }
+            return none();
         }
     }
 
@@ -1478,7 +1478,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             value = StackValue.complexReceiver(value, true, false, true);
             value.put(this.type, v);
 
@@ -1486,6 +1486,7 @@ public abstract class StackValue {
 
             value.put(this.type, v, true);
             coerceTo(type, v);
+            return none();
         }
     }
 
@@ -1554,7 +1555,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             StackValue currentExtensionReceiver = extensionReceiver;
             boolean hasExtensionReceiver = extensionReceiver != none();
             if (extensionReceiver instanceof StackValue.SafeCall) {
@@ -1566,6 +1567,7 @@ public abstract class StackValue {
 
             currentExtensionReceiver
                     .moveToTopOfStack(hasExtensionReceiver ? type : currentExtensionReceiver.type, v, dispatchReceiver.type.getSize());
+            return none();
         }
 
         @Override
@@ -1681,7 +1683,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(
+        public StackValue putSelector(
                 @NotNull Type type, @NotNull InstructionAdapter v
         ) {
             boolean wasPut = false;
@@ -1701,6 +1703,7 @@ public abstract class StackValue {
             if (!wasPut && receiver.canHaveSideEffects()) {
                 receiver.put(Type.VOID_TYPE, v);
             }
+            return none();
         }
     }
 
@@ -1714,12 +1717,13 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(
+        public StackValue putSelector(
                 @NotNull Type type, @NotNull InstructionAdapter v
         ) {
             for (StackValue instruction : instructions) {
                 instruction.put(instruction.type, v);
             }
+            return none();
         }
     }
 
@@ -1741,10 +1745,10 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(
+        public StackValue putSelector(
                 @NotNull Type type, @NotNull InstructionAdapter v
         ) {
-            originalValue.putSelector(type, v);
+            return originalValue.putSelector(type, v);
         }
 
         @Override
@@ -1788,7 +1792,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             receiver.put(this.type, v);
             if (ifNull != null) {
                 //not a primitive
@@ -1796,6 +1800,7 @@ public abstract class StackValue {
                 v.ifnull(ifNull);
             }
             coerceTo(type, v);
+            return none();
         }
     }
 
@@ -1809,7 +1814,7 @@ public abstract class StackValue {
         }
 
         @Override
-        public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+        public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
             Label end = new Label();
 
             v.goTo(end);
@@ -1821,6 +1826,7 @@ public abstract class StackValue {
             v.mark(end);
 
             coerceTo(type, v);
+            return none();
         }
 
         @Override

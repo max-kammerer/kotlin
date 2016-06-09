@@ -30,12 +30,13 @@ abstract class CallGenerator {
                 resolvedCall: ResolvedCall<*>?,
                 callDefault: Boolean,
                 codegen: ExpressionCodegen,
-                generatedArgRefs: List<StackValue>) {
+                generatedArgRefs: List<StackValue>): StackValue {
             if (!callDefault) {
-                callableMethod.genInvokeInstruction(codegen, generatedArgRefs)
+                return callableMethod.genInvokeInstruction(codegen, generatedArgRefs)
             }
             else {
                 (callableMethod as CallableMethod).genInvokeDefaultInstruction(codegen.v)
+                return StackValue.none()
             }
         }
 
@@ -90,7 +91,7 @@ abstract class CallGenerator {
         }
     }
 
-    fun genCall(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+    fun genCall(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
         if (resolvedCall != null) {
             val calleeExpression = resolvedCall.call.calleeExpression
             if (calleeExpression != null) {
@@ -98,10 +99,10 @@ abstract class CallGenerator {
             }
         }
 
-        genCallInner(callableMethod, resolvedCall, callDefault, codegen, generatedArgRefs)
+        return genCallInner(callableMethod, resolvedCall, callDefault, codegen, generatedArgRefs)
     }
 
-    abstract fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>)
+    abstract fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue
 
     abstract fun afterParameterPut(
             type: Type,

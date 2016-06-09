@@ -40,6 +40,7 @@ class BinaryOp(private val opcode: Int) : IntrinsicMethod() {
                 codegen.v.visitInsn(returnType.getOpcode(opcode))
             if (operandType != returnType)
                     StackValue.coerce(operandType, returnType, codegen.v)
+            StackValue.none()
         }
     }
 }

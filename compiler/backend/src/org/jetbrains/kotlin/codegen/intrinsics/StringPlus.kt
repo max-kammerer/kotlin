@@ -18,11 +18,13 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 
 class StringPlus : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
             createIntrinsicCallable(method) { codegen, args ->
                 codegen.v.invokestatic("kotlin/jvm/internal/Intrinsics", "stringPlus",
                                 "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;", false)
+                StackValue.none()
             }
 }

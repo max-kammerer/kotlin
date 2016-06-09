@@ -39,7 +39,7 @@ interface Callable {
         genInvokeInstruction(codegen, emptyList())
     }
 
-    fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>)
+    fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue
 
     fun isStaticCall(): Boolean
 

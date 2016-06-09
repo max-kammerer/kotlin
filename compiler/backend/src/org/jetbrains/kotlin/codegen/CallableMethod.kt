@@ -17,8 +17,10 @@
 package org.jetbrains.kotlin.codegen
 
 import org.jetbrains.kotlin.codegen.llvm.ExpressionCodegenLLVM
+import org.jetbrains.kotlin.codegen.llvm.LLVMResult
 import org.jetbrains.kotlin.codegen.llvm.toLLVMResult
 import org.jetbrains.kotlin.load.java.JvmAbi
+import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodParameterKind
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodParameterSignature
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
@@ -52,12 +54,14 @@ class CallableMethod(
         get() = getAsmMethod().argumentTypes
 
 
-    override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+    override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
         if (codegen is ExpressionCodegenLLVM) {
-            codegen.builder.buildCall(codegen.state.llvmState.findFunction(getAsmMethod().name), getAsmMethod().toString(), *generatedArgRefs.map { it.toLLVMResult }.toTypedArray())
+            val resultValue = codegen.builder.buildCall(codegen.state.llvmState.findFunction(getAsmMethod().name), getAsmMethod().toString(), *generatedArgRefs.map { it.toLLVMResult }.toTypedArray())
+            return LLVMResult(resultValue, AsmTypes.OBJECT_TYPE, codegen.builder)
         }
         else {
             codegen.v.visitMethodInsn(invokeOpcode, owner.internalName, getAsmMethod().name, getAsmMethod().descriptor)
+            return StackValue.none()
         }
     }
 

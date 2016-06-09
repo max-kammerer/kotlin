@@ -80,6 +80,7 @@ class Concat : IntrinsicMethod() {
                                 StackValue.receiver(resolvedCall, receiver, codegen, this)
                         )
                         StackValue.coerce(actualType, returnType, it)
+                        StackValue.none()
                     }
                 }
 
@@ -90,13 +91,14 @@ class Concat : IntrinsicMethod() {
                     v.invokespecial("java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false)
                 }
 
-                override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+                override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                     // String::plus has type String.(Any?) -> String, thus we have no argument type information
                     // in case of callable reference passed to a generic function, e.g.:
                     //      charArrayOf('O', 'K').fold("", String::plus)
                     // TODO Make String::plus generic, and invoke proper StringBuilder#append.
                     AsmUtil.genInvokeAppendMethod(codegen.v, AsmTypes.OBJECT_TYPE)
                     codegen.v.invokevirtual("java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false)
+                    return StackValue.none()
                 }
             }
 }

@@ -29,8 +29,9 @@ class NewArray : IntrinsicMethod() {
         val jetType = resolvedCall.resultingDescriptor.returnType!!
         val type = codegen.getState().typeMapper.mapType(jetType)
         return object : IntrinsicCallable(type, listOf(Type.INT_TYPE), null, null) {
-            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                 codegen.newArrayInstruction(jetType)
+                return StackValue.none()
             }
         }
     }

@@ -135,7 +135,7 @@ class AndroidExpressionCodegenExtension : ExpressionCodegenExtension {
         if (functionDescriptor.name.asString() != AndroidConst.CLEAR_FUNCTION_NAME) return null
 
         val receiverDescriptor = resolvedCall.getReceiverDeclarationDescriptor() as? ClassDescriptor ?: return null
-        if (!isCacheSupported(receiverDescriptor)) return StackValue.functionCall(Type.VOID_TYPE) {}
+        if (!isCacheSupported(receiverDescriptor)) return StackValue.functionCall(Type.VOID_TYPE) { StackValue.none() }
 
         val androidClassType = AndroidClassType.getClassType(receiverDescriptor)
         if (androidClassType == AndroidClassType.UNKNOWN) return null
@@ -145,6 +145,7 @@ class AndroidExpressionCodegenExtension : ExpressionCodegenExtension {
 
             receiver.put(c.typeMapper.mapType(receiverDescriptor), it)
             it.invokevirtual(bytecodeClassName, CLEAR_CACHE_METHOD_NAME, "()V", false)
+            StackValue.none()
         }
     }
 
@@ -172,10 +173,11 @@ class AndroidExpressionCodegenExtension : ExpressionCodegenExtension {
             val androidPackage: String
     ) : StackValue(typeMapper.mapType(propertyDescriptor.returnType!!)) {
 
-        override fun putSelector(type: Type, v: InstructionAdapter) {
+        override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
             val returnTypeString = typeMapper.mapType(propertyDescriptor.type.lowerIfFlexible()).className
             if (AndroidConst.FRAGMENT_FQNAME == returnTypeString || AndroidConst.SUPPORT_FRAGMENT_FQNAME == returnTypeString) {
-                return putSelectorForFragment(v)
+                putSelectorForFragment(v)
+                return StackValue.none()
             }
 
             val syntheticProperty = propertyDescriptor as AndroidSyntheticProperty
@@ -208,6 +210,7 @@ class AndroidExpressionCodegenExtension : ExpressionCodegenExtension {
             }
 
             v.checkcast(this.type)
+            return StackValue.none()
         }
 
         private fun putSelectorForFragment(v: InstructionAdapter) {

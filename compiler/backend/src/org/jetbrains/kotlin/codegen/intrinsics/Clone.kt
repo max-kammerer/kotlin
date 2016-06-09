@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes.OBJECT_TYPE
 import org.jetbrains.org.objectweb.asm.Opcodes
 
@@ -26,5 +27,6 @@ class Clone : IntrinsicMethod() {
             createUnaryIntrinsicCallable(method, OBJECT_TYPE) { codegen, args ->
                 val opcode = if (isSuperCall) Opcodes.INVOKESPECIAL else Opcodes.INVOKEVIRTUAL
                 codegen.v.visitMethodInsn(opcode, "java/lang/Object", "clone", "()Ljava/lang/Object;", false)
+                StackValue.none()
             }
 }

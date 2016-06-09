@@ -244,9 +244,9 @@ public class ClosureCodegen extends MemberCodegen<KtElement> {
     public StackValue putInstanceOnStack(@NotNull final ExpressionCodegen codegen) {
         return StackValue.operation(
                 functionReferenceTarget != null ? K_FUNCTION : asmType,
-                new Function1<InstructionAdapter, Unit>() {
+                new Function1<InstructionAdapter, StackValue>() {
                     @Override
-                    public Unit invoke(InstructionAdapter v) {
+                    public StackValue invoke(InstructionAdapter v) {
                         if (isConst(closure)) {
                             v.getstatic(asmType.getInternalName(), JvmAbi.INSTANCE_FIELD, asmType.getDescriptor());
                         }
@@ -258,7 +258,7 @@ public class ClosureCodegen extends MemberCodegen<KtElement> {
                             v.invokespecial(asmType.getInternalName(), "<init>", constructor.getDescriptor(), false);
                         }
 
-                        return Unit.INSTANCE;
+                        return StackValue.none();
                     }
                 }
         );

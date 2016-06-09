@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.ExpressionCodegen
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
@@ -38,6 +39,7 @@ class IsArrayOf : IntrinsicMethod() {
 
         return createIntrinsicCallable(method) { codegen, args ->
             codegen.v.instanceOf(arrayType)
+            StackValue.none()
         }
     }
 }

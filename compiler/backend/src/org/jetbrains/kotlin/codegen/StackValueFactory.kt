@@ -80,4 +80,5 @@ object ByteCodeStackValueFactory : StackValueFactory {
     override fun returnInsn(returnType: Type, value: StackValue?, v: InstructionAdapter) {
         v.visitInsn(returnType.getOpcode(Opcodes.IRETURN))
     }
+
 }

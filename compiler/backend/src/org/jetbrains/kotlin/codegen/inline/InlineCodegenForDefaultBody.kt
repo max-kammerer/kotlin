@@ -64,7 +64,7 @@ class InlineCodegenForDefaultBody(
         codegen.v.visitLabel(methodStartLabel)
     }
 
-    override fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+    override fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
         val nodeAndSmap = InlineCodegen.createMethodNode(functionDescriptor, jvmSignature, codegen, context, callDefault)
         val childSourceMapper = InlineCodegen.createNestedSourceMapper(nodeAndSmap, sourceMapper)
 
@@ -85,6 +85,7 @@ class InlineCodegenForDefaultBody(
         })
 
         transformedMethod.accept(MethodBodyVisitor(codegen.v))
+        return StackValue.none()
     }
 
     override fun afterParameterPut(type: Type, stackValue: StackValue?, parameterIndex: Int) {

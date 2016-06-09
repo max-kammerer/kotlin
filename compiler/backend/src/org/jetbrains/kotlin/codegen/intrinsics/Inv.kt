@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil.numberFunctionOperandType
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.org.objectweb.asm.Type
 
 class Inv : IntrinsicMethod() {
@@ -33,6 +34,7 @@ class Inv : IntrinsicMethod() {
                 codegen.v.iconst(-1)
             }
             codegen.v.xor(returnType)
+            StackValue.none()
         }
     }
 }

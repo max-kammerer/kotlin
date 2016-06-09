@@ -63,8 +63,9 @@ class RangeTo : IntrinsicMethod() {
                 }
             }
 
-            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                 codegen.v.invokespecial(returnType.internalName, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, argType, argType), false)
+                return codegen.stackValueFactory.none()
             }
         }
     }

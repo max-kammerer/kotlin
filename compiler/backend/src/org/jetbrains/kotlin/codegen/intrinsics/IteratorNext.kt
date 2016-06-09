@@ -29,7 +29,7 @@ class IteratorNext : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable {
         val type = AsmUtil.unboxType(method.returnType)
         return object : IntrinsicCallable(type, listOf(), AsmTypes.OBJECT_TYPE, null) {
-            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                 val primitiveClassName = getKotlinPrimitiveClassName(returnType)
                 codegen.v.invokevirtual(
                         getPrimitiveIteratorType(primitiveClassName).internalName,
@@ -37,6 +37,7 @@ class IteratorNext : IntrinsicMethod() {
                         "()" + returnType.descriptor,
                         false
                 )
+                return StackValue.none()
             }
         }
     }

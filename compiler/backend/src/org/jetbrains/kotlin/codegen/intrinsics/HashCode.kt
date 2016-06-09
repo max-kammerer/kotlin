@@ -32,8 +32,9 @@ class HashCode : IntrinsicMethod() {
                     nullOrObject(method.dispatchReceiverType),
                     nullOrObject(method.extensionReceiverType)
             ) {
-                override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+                override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                     codegen.v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false)
+                    return StackValue.none()
                 }
             }
 }

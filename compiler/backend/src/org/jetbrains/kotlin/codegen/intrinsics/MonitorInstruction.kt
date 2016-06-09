@@ -36,8 +36,9 @@ class MonitorInstruction private constructor(private val opcode: Int) : Intrinsi
 
     override fun toCallable(method: CallableMethod): Callable {
         return object : IntrinsicCallable(Type.VOID_TYPE, listOf(OBJECT_TYPE), null, null) {
-            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                 codegen.v.visitInsn(opcode)
+                return codegen.stackValueFactory.none()
             }
         }
     }

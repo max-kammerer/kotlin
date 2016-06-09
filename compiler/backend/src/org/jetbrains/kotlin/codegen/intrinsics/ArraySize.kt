@@ -27,5 +27,6 @@ class ArraySize : IntrinsicPropertyGetter() {
     ) = StackValue.operation(returnType) {
         receiver.put(receiver.type, it)
         it.arraylength()
+        StackValue.none()
     }
 }

@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil.comparisonOperandType
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 
@@ -41,6 +42,7 @@ class CompareTo : IntrinsicMethod() {
         return createBinaryIntrinsicCallable(method.returnType, parameterType, parameterType, null) {
             codegen, args ->
             genInvoke(parameterType, codegen.v)
+            StackValue.none()
         }
     }
 }

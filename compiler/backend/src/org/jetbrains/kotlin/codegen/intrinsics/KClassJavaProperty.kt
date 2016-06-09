@@ -43,6 +43,7 @@ class KClassJavaProperty : IntrinsicPropertyGetter() {
                     codegen.putReifiedOperationMarkerIfTypeIsReifiedParameter(type, ReifiedTypeInliner.OperationKind.JAVA_CLASS)
                     AsmUtil.putJavaLangClassInstance(iv, asmType)
                     coerceToJavaLangClass(iv, returnType)
+                    StackValue.none()
                 }
             }
             isWithClassLiteralArgument(resolvedCall) -> {
@@ -54,6 +55,7 @@ class KClassJavaProperty : IntrinsicPropertyGetter() {
                         iv.tconst(asmType)
                     }
                     coerceToJavaLangClass(iv, returnType)
+                    StackValue.none()
                 }
             }
             else -> null

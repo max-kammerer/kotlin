@@ -25,12 +25,12 @@ open class IntrinsicCallable(
         override val valueParameterTypes: List<Type>,
         override val dispatchReceiverType: Type?,
         override val extensionReceiverType: Type?,
-        private val invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> Unit = { a, b -> throw UnsupportedOperationException() }
+        private val invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> StackValue = { a, b -> throw UnsupportedOperationException() }
 ) : Callable {
 
     constructor(
             callable: CallableMethod,
-            invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> Unit = { a, b -> }
+            invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> StackValue = { a, b -> StackValue.none()}
     ) : this(
             callable.returnType,
             callable.valueParameterTypes,
@@ -39,12 +39,12 @@ open class IntrinsicCallable(
             invoke
     )
 
-    override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
-        invokeIntrinsic(codegen, generatedArgRefs)
+    override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
+        return invokeIntrinsic(codegen, generatedArgRefs)
     }
 
-    open fun invokeIntrinsic(codegen: ExpressionCodegen, argsRefs: List<StackValue>) {
-        invoke(codegen, argsRefs)
+    open fun invokeIntrinsic(codegen: ExpressionCodegen, argsRefs: List<StackValue>): StackValue {
+        return invoke(codegen, argsRefs)
     }
 
     override val parameterTypes: Array<Type>
@@ -67,13 +67,13 @@ fun createBinaryIntrinsicCallable(
         valueParameterType: Type,
         thisType: Type? = null,
         receiverType: Type? = null,
-        lambda: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> Unit
+        lambda: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> StackValue
 ): IntrinsicCallable {
     assert(AsmUtil.isPrimitive(returnType)) { "Return type of BinaryOp intrinsic should be of primitive type: $returnType" }
 
     return object : IntrinsicCallable(returnType, listOf(valueParameterType), thisType, receiverType) {
-        override fun invokeIntrinsic(v: ExpressionCodegen, argsRefs: List<StackValue>) {
-            lambda(v, argsRefs)
+        override fun invokeIntrinsic(v: ExpressionCodegen, argsRefs: List<StackValue>): StackValue {
+            return lambda(v, argsRefs)
         }
     }
 }
@@ -83,7 +83,7 @@ fun createUnaryIntrinsicCallable(
         newReturnType: Type? = null,
         needPrimitiveCheck: Boolean = false,
         newThisType: Type? = null,
-        invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> Unit
+        invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> StackValue
 ): IntrinsicCallable {
     val intrinsic = IntrinsicCallable(
             newReturnType ?: callable.returnType,
@@ -103,7 +103,7 @@ fun createUnaryIntrinsicCallable(
 
 fun createIntrinsicCallable(
         callable: CallableMethod,
-        invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> Unit
+        invoke: IntrinsicCallable.(ExpressionCodegen, List<StackValue>) -> StackValue
 ): IntrinsicCallable {
     return IntrinsicCallable(callable, invoke)
 }

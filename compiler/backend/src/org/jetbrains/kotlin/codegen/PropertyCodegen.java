@@ -530,11 +530,11 @@ public class PropertyCodegen {
                 resolvedCall.getCall().getValueArguments().get(propertyMetadataArgumentIndex).asElement(),
                 new StackValue(K_PROPERTY_TYPE) {
                     @Override
-                    public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+                    public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
                         Field array = StackValue.field(
                                 Type.getType("[" + K_PROPERTY_TYPE), owner, JvmAbi.DELEGATED_PROPERTIES_ARRAY_NAME, true, StackValue.none()
                         );
-                        StackValue.arrayElement(
+                        return StackValue.arrayElement(
                                 K_PROPERTY_TYPE, array, StackValue.constant(indexInPropertyMetadataArray, Type.INT_TYPE)
                         ).put(type, v);
                     }

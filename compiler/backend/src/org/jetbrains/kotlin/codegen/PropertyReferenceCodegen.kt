@@ -169,6 +169,7 @@ class PropertyReferenceCodegen(
     fun putInstanceOnStack(): StackValue =
             StackValue.operation(wrapperMethod.returnType) { iv ->
                 iv.getstatic(asmType.internalName, JvmAbi.INSTANCE_FIELD, wrapperMethod.returnType.descriptor)
+                StackValue.none()
             }
 
     companion object {

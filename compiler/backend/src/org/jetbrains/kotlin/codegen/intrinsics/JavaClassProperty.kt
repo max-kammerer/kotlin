@@ -38,6 +38,7 @@ class JavaClassProperty : IntrinsicPropertyGetter() {
             StackValue.operation(returnType) {
                 val actualType = generateImpl(it, receiver)
                 StackValue.coerce(actualType, returnType, it)
+                StackValue.none()
             }
 
     fun generateImpl(v: InstructionAdapter, receiver: StackValue): Type {
@@ -60,13 +61,14 @@ class JavaClassProperty : IntrinsicPropertyGetter() {
     override fun toCallable(fd: FunctionDescriptor, isSuper: Boolean, resolvedCall: ResolvedCall<*>, codegen: ExpressionCodegen): Callable {
         val classType = codegen.getState().typeMapper.mapType(resolvedCall.call.dispatchReceiver!!.type)
         return object : IntrinsicCallable(getType(Class::class.java), listOf(), classType, null) {
-            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>): StackValue {
                 if (isPrimitive(classType)) {
                     codegen.v.getstatic(boxType(classType).internalName, "TYPE", "Ljava/lang/Class;")
                 }
                 else {
                     codegen.v.invokevirtual("java/lang/Object", "getClass", "()Ljava/lang/Class;", false)
                 }
+                return StackValue.none()
             }
 
             override fun isStaticCall() = isPrimitive(classType)

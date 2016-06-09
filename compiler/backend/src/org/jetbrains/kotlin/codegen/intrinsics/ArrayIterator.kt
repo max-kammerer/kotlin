@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 
 class ArrayIterator : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
@@ -30,5 +31,6 @@ class ArrayIterator : IntrinsicMethod() {
                         else
                             "kotlin/jvm/internal/ArrayIteratorKt"
                 codegen.v.invokestatic(intrinsicOwner, "iterator", methodSignature, false)
+                StackValue.none()
             }
 }

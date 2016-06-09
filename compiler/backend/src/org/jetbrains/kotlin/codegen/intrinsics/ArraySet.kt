@@ -33,8 +33,9 @@ class ArraySet : IntrinsicMethod() {
                 method.dispatchReceiverType,
                 method.extensionReceiverType
         ) {
-            override fun invokeIntrinsic(codegen: ExpressionCodegen, argsRefs: List<StackValue>) {
+            override fun invokeIntrinsic(codegen: ExpressionCodegen, argsRefs: List<StackValue>): StackValue {
                 codegen.v.astore(type)
+                return StackValue.none()
             }
         }
     }

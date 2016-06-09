@@ -24,10 +24,13 @@ class CoercionValue(
         val castType: Type
 ) : StackValue(castType, value.canHaveSideEffects()) {
 
-    override fun putSelector(type: Type, v: InstructionAdapter) {
-        value.putSelector(value.type, v)
-        StackValue.coerce(value.type, castType, v)
-        StackValue.coerce(castType, type, v)
+    override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
+        try {
+            return value.putSelector(value.type, v)
+        } finally {
+            StackValue.coerce(value.type, castType, v)
+            StackValue.coerce(castType, type, v)
+        }
     }
 
     override fun storeSelector(topOfStackType: Type, v: InstructionAdapter) {
@@ -53,18 +56,25 @@ class StackValueWithLeaveTask(
         stackValue.putReceiver(v, isRead)
     }
 
-    override fun putSelector(type: Type, v: InstructionAdapter) {
-        stackValue.putSelector(type, v)
-        leaveTasks(stackValue)
+    override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
+        try {
+            return stackValue.putSelector(type, v)
+        } finally {
+            leaveTasks(stackValue)
+        }
     }
 }
 
-open class OperationStackValue(resultType: Type, val lambda: (v: InstructionAdapter) -> Unit) : StackValue(resultType) {
+open class OperationStackValue(resultType: Type, val lambda: (v: InstructionAdapter) -> StackValue) : StackValue(resultType) {
 
-    override fun putSelector(type: Type, v: InstructionAdapter) {
-        lambda(v)
-        coerceTo(type, v)
+    override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
+        try {
+            return lambda(v)
+        } finally {
+            //TODO coerce should return svalue
+            coerceTo(type, v)
+        }
     }
 }
 
-class FunctionCallStackValue(resultType: Type, lambda: (v: InstructionAdapter) -> Unit) : OperationStackValue(resultType, lambda)
+class FunctionCallStackValue(resultType: Type, lambda: (v: InstructionAdapter) -> StackValue) : OperationStackValue(resultType, lambda)

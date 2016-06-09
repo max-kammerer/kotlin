@@ -131,8 +131,9 @@ public class InlineCodegen extends CallGenerator {
         }
     }
 
+    @NotNull
     @Override
-    public void genCallInner(
+    public StackValue genCallInner(
             @NotNull Callable callableMethod,
             @Nullable ResolvedCall<?> resolvedCall,
             boolean callDefault,
@@ -141,7 +142,7 @@ public class InlineCodegen extends CallGenerator {
     ) {
         if (!state.getInlineCycleReporter().enterIntoInlining(resolvedCall)) {
             generateStub(resolvedCall, codegen);
-            return;
+            return StackValue.none();
         }
 
         SMAPAndMethodNode nodeAndSmap = null;
@@ -161,6 +162,7 @@ public class InlineCodegen extends CallGenerator {
         finally {
             state.getInlineCycleReporter().exitFromInliningOf(resolvedCall);
         }
+        return StackValue.none();
     }
 
     @NotNull

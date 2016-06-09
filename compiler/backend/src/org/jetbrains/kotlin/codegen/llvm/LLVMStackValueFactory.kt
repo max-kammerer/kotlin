@@ -82,6 +82,7 @@ class LLVMStackValueFactory(val builder: Builder) : StackValueFactory {
             builder.buildRet((value as LLVMStackValue).toLLVMValue());
         }
     }
+
 }
 
 abstract class LLVMStackValue(val builder: Builder, type: Type) : StackValue(type) {
@@ -89,12 +90,12 @@ abstract class LLVMStackValue(val builder: Builder, type: Type) : StackValue(typ
 
     abstract fun putLLVMSelector(type: Type): Value
 
-    override fun putSelector(type: Type, v: InstructionAdapter) {
-        put(type, v)
+    override fun putSelector(type: Type, v: InstructionAdapter): StackValue? {
+        return put(type, v)
     }
 
     override fun put(type: Type, v: InstructionAdapter): StackValue? {
-        return Result(putLLVMSelector(type), type, builder)
+        return LLVMResult(putLLVMSelector(type), type, builder)
     }
 }
 
@@ -114,7 +115,7 @@ class LLVMLocal(val variable: Variable, type: Type, builder: Builder) : LLVMStac
 
     override fun store(value: StackValue, v: InstructionAdapter, skipReceiver: Boolean) {
         assert(value is LLVMStackValue) { "Not LLVM stack value" }
-        variable.store(builder, (value as LLVMStackValue).toLLVMValue())
+        variable.store(builder, value.put(type, v).toLLVMResult)
     }
 
     override fun toLLVMValue(): Value = variable.load(builder)
@@ -128,9 +129,9 @@ class Param(val param: Value, val type: Type, builder: Builder) : LLVMStackValue
     override fun toLLVMValue(): Value = param
 }
 
-class Result(val result: Value, val type: Type, builder: Builder) : LLVMStackValue(builder, type) {
+class LLVMResult(val result: Value, val type: Type, builder: Builder) : LLVMStackValue(builder, type) {
     override fun putLLVMSelector(type: Type): Value {
-        throw UnsupportedOperationException()
+        return toLLVMValue()
     }
 
     override fun toLLVMValue(): Value = result

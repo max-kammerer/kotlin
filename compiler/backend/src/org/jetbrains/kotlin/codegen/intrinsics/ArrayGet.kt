@@ -19,11 +19,13 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil.correctElementType
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 
 class ArrayGet : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
             createIntrinsicCallable(method) { codegen, args ->
                 val type = correctElementType(calcReceiverType())
                 codegen.v.aload(type)
+                StackValue.none()
             }
 }

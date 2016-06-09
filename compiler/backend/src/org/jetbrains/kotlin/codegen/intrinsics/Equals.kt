@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes.OBJECT_TYPE
 
 class Equals : IntrinsicMethod() {
@@ -30,5 +31,6 @@ class Equals : IntrinsicMethod() {
                     nullOrObject(method.extensionReceiverType)
             ) { codegen, args ->
                 AsmUtil.genAreEqualCall(codegen.v)
+                StackValue.none()
             }
 }

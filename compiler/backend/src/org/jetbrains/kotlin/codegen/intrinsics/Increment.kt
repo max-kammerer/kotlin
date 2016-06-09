@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil.genIncrement
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.psi.KtPrefixExpression
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 
@@ -28,5 +29,6 @@ class Increment(private val myDelta: Int) : IntrinsicMethod() {
                 val jetExpression = resolvedCall.call.calleeExpression
                 assert(jetExpression !is KtPrefixExpression) { "There should be postfix increment ${jetExpression!!.text}" }
                 genIncrement(returnType, myDelta, codegen.v)
+                StackValue.none()
             }
 }

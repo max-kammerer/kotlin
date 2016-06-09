@@ -471,13 +471,13 @@ public class AsmUtil {
     }
 
     public static StackValue genToString(final StackValue receiver, final Type receiverType) {
-        return StackValue.operation(JAVA_STRING_TYPE, new Function1<InstructionAdapter, Unit>() {
+        return StackValue.operation(JAVA_STRING_TYPE, new Function1<InstructionAdapter, StackValue>() {
             @Override
-            public Unit invoke(InstructionAdapter v) {
+            public StackValue invoke(InstructionAdapter v) {
                 Type type = stringValueOfType(receiverType);
                 receiver.put(type, v);
                 v.invokestatic("java/lang/String", "valueOf", "(" + type.getDescriptor() + ")Ljava/lang/String;", false);
-                return null;
+                return StackValue.none();
             }
         });
     }
@@ -543,9 +543,9 @@ public class AsmUtil {
             return StackValue.cmp(opToken, leftType, left, right);
         }
 
-        return StackValue.operation(Type.BOOLEAN_TYPE, new Function1<InstructionAdapter, Unit>() {
+        return StackValue.operation(Type.BOOLEAN_TYPE, new Function1<InstructionAdapter, StackValue>() {
             @Override
-            public Unit invoke(InstructionAdapter v) {
+            public StackValue invoke(InstructionAdapter v) {
                 left.put(leftType, v);
                 right.put(rightType, v);
                 genAreEqualCall(v);
@@ -553,7 +553,7 @@ public class AsmUtil {
                 if (opToken == KtTokens.EXCLEQ || opToken == KtTokens.EXCLEQEQEQ) {
                     genInvertBoolean(v);
                 }
-                return Unit.INSTANCE;
+                return StackValue.none();
             }
         });
     }
@@ -661,7 +661,7 @@ public class AsmUtil {
         return new StackValue(stackValue.type) {
 
             @Override
-            public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+            public StackValue putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
                 stackValue.put(type, v);
                 if (type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY) {
                     v.dup();
@@ -669,6 +669,7 @@ public class AsmUtil {
                     v.invokestatic("kotlin/jvm/internal/Intrinsics", "checkExpressionValueIsNotNull",
                                    "(Ljava/lang/Object;Ljava/lang/String;)V", false);
                 }
+                return StackValue.none();
             }
         };
     }
