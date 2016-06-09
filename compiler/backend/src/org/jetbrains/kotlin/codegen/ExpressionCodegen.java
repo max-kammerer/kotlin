@@ -437,7 +437,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         return genQualified(receiver, expression.getBaseExpression());
     }
 
-    private static boolean isEmptyExpression(@Nullable KtElement expr) {
+    protected static boolean isEmptyExpression(@Nullable KtElement expr) {
         if (expr == null) {
             return true;
         }
@@ -3111,7 +3111,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         return StackValue.or(gen(expression.getLeft()), gen(expression.getRight()));
     }
 
-    private StackValue generateEquals(KtExpression left, KtExpression right, IElementType opToken) {
+    protected StackValue generateEquals(KtExpression left, KtExpression right, IElementType opToken) {
         Type leftType = expressionType(left);
         Type rightType = expressionType(right);
 

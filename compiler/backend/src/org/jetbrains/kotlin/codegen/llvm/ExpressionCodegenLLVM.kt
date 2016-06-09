@@ -16,9 +16,12 @@
 
 package org.jetbrains.kotlin.codegen.llvm
 
+import com.intellij.psi.tree.IElementType
 import org.jetbrains.kotlin.codegen.ExpressionCodegen
 import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
+import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtIfExpression
 import org.jetbrains.org.objectweb.asm.MethodVisitor
@@ -26,6 +29,7 @@ import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
 import org.llvm.Builder
 import org.llvm.Value
+import org.llvm.binding.LLVMLibrary
 
 class ExpressionCodegenLLVM(
         val llvmFunction: Value,
@@ -70,6 +74,15 @@ class ExpressionCodegenLLVM(
         }
     }
 
+    override fun generateEquals(left: KtExpression?, right: KtExpression?, opToken: IElementType?): StackValue? {
+        if (opToken === KtTokens.EQEQ ||  opToken === KtTokens.EQEQEQ) {
+            return LLVMOperation(Type.BOOLEAN_TYPE, builder) {
+                builder.buildICmp(LLVMLibrary.LLVMIntPredicate.LLVMIntEQ, gen(left).toLLVMResult, gen(right).toLLVMResult, "identityEq")
+            }
+        }
+        return super.generateEquals(left, right, opToken)
+    }
+
     override fun generateIfExpression(expression: KtIfExpression, isStatement: Boolean): StackValue? {
         val asmType = if (isStatement) Type.VOID_TYPE else expressionType(expression)
         val condition = gen(expression.condition)
@@ -84,11 +97,15 @@ class ExpressionCodegenLLVM(
 
             builder.buildCondBr(condition.put(condition.type, v).toLLVMResult, iftrue, iffalse)
             builder.positionBuilderAtEnd(iftrue)
-            gen(thenExpression, asmType)
+            if (!isEmptyExpression(thenExpression)) {
+                gen(thenExpression, asmType)
+            }
             builder.buildBr(end)
 
             builder.positionBuilderAtEnd(iffalse)
-            gen(elseExpression, asmType)
+            if (!isEmptyExpression(elseExpression)) {
+                gen(elseExpression, asmType)
+            }
             builder.buildBr(end)
             builder.positionBuilderAtEnd(end)
             //TODO support expression
