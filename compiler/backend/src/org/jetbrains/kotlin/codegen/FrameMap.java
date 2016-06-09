@@ -23,21 +23,21 @@ import gnu.trove.TObjectIntIterator;
 import org.jetbrains.org.objectweb.asm.Type;
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class FrameMap {
     private final TObjectIntHashMap<DeclarationDescriptor> myVarIndex = new TObjectIntHashMap<DeclarationDescriptor>();
     private final TObjectIntHashMap<DeclarationDescriptor> myVarSizes = new TObjectIntHashMap<DeclarationDescriptor>();
     private int myMaxIndex = 0;
 
+    private Stack<TypeAndDescriptor> currentVars = new Stack<TypeAndDescriptor>();
+
     public int enter(DeclarationDescriptor descriptor, Type type) {
         int index = myMaxIndex;
         myVarIndex.put(descriptor, index);
         myMaxIndex += type.getSize();
         myVarSizes.put(descriptor, type.getSize());
+        currentVars.push(new TypeAndDescriptor(descriptor, type));
         return index;
     }
 
@@ -49,17 +49,25 @@ public class FrameMap {
         if (oldIndex != myMaxIndex) {
             throw new IllegalStateException("Descriptor can be left only if it is last: " + descriptor);
         }
+        currentVars.pop();
         return oldIndex;
+
     }
 
     public int enterTemp(Type type) {
         int result = myMaxIndex;
         myMaxIndex += type.getSize();
+        currentVars.push(new TypeAndDescriptor(null, type));
         return result;
     }
 
     public void leaveTemp(Type type) {
         myMaxIndex -= type.getSize();
+        currentVars.pop();
+    }
+
+    public Stack<TypeAndDescriptor> getCurrentVars() {
+        return currentVars;
     }
 
     public int getIndex(DeclarationDescriptor descriptor) {

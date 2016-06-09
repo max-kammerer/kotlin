@@ -125,7 +125,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     private final CodegenStatementVisitor statementVisitor = new CodegenStatementVisitor(this);
     private final MemberCodegen<?> parentCodegen;
     @NotNull
-    private final StackValueFactory stackValueFactory;
+    protected final StackValueFactory stackValueFactory;
     private final TailRecursionCodegen tailRecursionCodegen;
     public final CallGenerator defaultCallGenerator = new CallGenerator.DefaultCallGenerator(this);
 
@@ -1998,7 +1998,9 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
             v.areturn(returnType);
         }
-        ExpressionCodegenLLVM.returnExpression(this, expr);
+        if (false == this instanceof ExpressionCodegenLLVM) {
+            ExpressionCodegenLLVM.returnExpression(this, expr);
+        }
     }
 
     public static boolean endsWithReturn(KtElement bodyExpression) {
@@ -2169,7 +2171,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         return adjustVariableValue(stackValueFactory.local(parameterOffsetInConstructor, parentResult.type), descriptor);
     }
 
-    protected StackValue stackValueForLocal(DeclarationDescriptor descriptor, int index) {
+    protected StackValue stackValueForLocal(@NotNull DeclarationDescriptor descriptor, int index) {
         if (descriptor instanceof VariableDescriptor) {
             VariableDescriptor variableDescriptor = (VariableDescriptor) descriptor;
 
@@ -3503,12 +3505,13 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
         StackValue storeTo = sharedVarType == null ? stackValueForLocal(variableDescriptor, index) : StackValue.shared(index, varType);
 
-        storeTo.putReceiver(v, false);
-        initializer.put(initializer.type, v);
+        //TODO
+        //storeTo.putReceiver(v, false);
+        //initializer.put(initializer.type, v);
+        //
+        //markLineNumber(variableDeclaration, false);
 
-        markLineNumber(variableDeclaration, false);
-
-        storeTo.storeSelector(initializer.type, v);
+        storeTo.store(initializer, v);
 
         if (isDelegatedLocalVariable(variableDescriptor)) {
             StackValue metadataValue = getVariableMetadataValue(variableDescriptor);

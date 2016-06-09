@@ -221,6 +221,19 @@ public abstract class StackValue {
     }
 
     @NotNull
+    public static StackValue returnValue(@NotNull Type type, final StackValue value) {
+        return new StackValue(type) {
+            @Override
+            public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
+                if (value != null) {
+                    value.put(type, v);
+                }
+                v.areturn(type);
+            }
+        };
+    }
+
+    @NotNull
     public static StackValue collectionElement(
             CollectionElementReceiver collectionElementReceiver,
             Type type,

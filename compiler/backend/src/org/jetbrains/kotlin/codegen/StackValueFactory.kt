@@ -45,6 +45,8 @@ interface StackValueFactory {
 
     fun arrayElement(type: Type, array: StackValue, index: StackValue): StackValue
 
+    fun returnValue(type: Type, value: StackValue?): StackValue
+
 }
 
 object ByteCodeStackValueFactory : StackValueFactory {
@@ -73,4 +75,7 @@ object ByteCodeStackValueFactory : StackValueFactory {
 
     override fun arrayElement(type: Type, array: StackValue, index: StackValue) = StackValue.arrayElement(type, array, index)
 
+    override fun returnValue(type: Type, value: StackValue?): StackValue {
+        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }
