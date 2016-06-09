@@ -98,15 +98,16 @@ public abstract class StackValue {
         put(type, v);
     }
 
-    public void put(@NotNull Type type, @NotNull InstructionAdapter v) {
-        put(type, v, false);
+    public StackValue put(@NotNull Type type, @NotNull InstructionAdapter v) {
+        return put(type, v, false);
     }
 
-    public void put(@NotNull Type type, @NotNull InstructionAdapter v, boolean skipReceiver) {
+    public StackValue put(@NotNull Type type, @NotNull InstructionAdapter v, boolean skipReceiver) {
         if (!skipReceiver) {
             putReceiver(v, true);
         }
         putSelector(type, v);
+        return StackValue.none();
     }
 
     public abstract void putSelector(@NotNull Type type, @NotNull InstructionAdapter v);

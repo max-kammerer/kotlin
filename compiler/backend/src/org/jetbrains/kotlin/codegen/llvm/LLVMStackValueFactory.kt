@@ -80,25 +80,35 @@ class LLVMStackValueFactory(val builder: Builder) : StackValueFactory {
 }
 
 abstract class LLVMStackValue(val builder: Builder, type: Type) : StackValue(type) {
-    abstract fun toLLVMValue() : Value
+    abstract fun toLLVMValue(): Value
+
+    abstract fun putLLVMSelector(type: Type): Value
+
+    override fun putSelector(type: Type, v: InstructionAdapter) {
+        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun put(type: Type, v: InstructionAdapter): StackValue? {
+        return Result(putLLVMSelector(type), type, builder)
+    }
 }
 
 class LLVMConstant(val value: Any?, builder: Builder, type: Type) : LLVMStackValue(builder, type) {
-    override fun putSelector(type: Type, v: InstructionAdapter) {
+    override fun putLLVMSelector(type: Type): Value {
         val llvmConstant = toLLVMValue()
-        builder.insertIntoBuilder(llvmConstant)
+        return llvmConstant
     }
 
     override fun toLLVMValue(): Value = llvmConstant(type, value)
 }
 
 class LLVMLocal(val variable: Variable, type: Type, builder: Builder) : LLVMStackValue(builder, type) {
-    override fun putSelector(type: Type, v: InstructionAdapter) {
-        variable.load(builder)
+    override fun putLLVMSelector(type: Type): Value {
+        return variable.load(builder)
     }
 
     override fun store(value: StackValue, v: InstructionAdapter, skipReceiver: Boolean) {
-        assert(value is LLVMStackValue) {"Not LLVM stack value"}
+        assert(value is LLVMStackValue) { "Not LLVM stack value" }
         variable.store(builder, (value as LLVMStackValue).toLLVMValue())
     }
 
@@ -106,9 +116,17 @@ class LLVMLocal(val variable: Variable, type: Type, builder: Builder) : LLVMStac
 }
 
 class Param(val param: Value, val type: Type, builder: Builder) : LLVMStackValue(builder, type) {
-    override fun putSelector(type: Type, v: InstructionAdapter) {
+    override fun putLLVMSelector(type: Type): Value {
         throw UnsupportedOperationException()
     }
 
     override fun toLLVMValue(): Value = param
+}
+
+class Result(val result: Value, val type: Type, builder: Builder) : LLVMStackValue(builder, type) {
+    override fun putLLVMSelector(type: Type): Value {
+        throw UnsupportedOperationException()
+    }
+
+    override fun toLLVMValue(): Value = result
 }

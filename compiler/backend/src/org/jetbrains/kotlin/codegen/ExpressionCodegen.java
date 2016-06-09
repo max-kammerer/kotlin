@@ -318,7 +318,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         return tempVar != null ? tempVar : genQualified(stackValueFactory.none(), expr);
     }
 
-    public void gen(KtElement expr, Type type) {
+    public StackValue gen(KtElement expr, Type type) {
         StackValue value = Type.VOID_TYPE.equals(type) ? genStatement(expr) : gen(expr);
         // for repl store the result of the last line into special field
         if (value.type != Type.VOID_TYPE && state.getReplSpecific().getShouldGenerateScriptResultValue()) {
@@ -327,11 +327,11 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 StackValue.Field resultValue = StackValue.field(context.getResultFieldInfo(), stackValueFactory.local0());
                 resultValue.store(value, v);
                 state.getReplSpecific().setHasResult(true);
-                return;
+                return StackValue.none();
             }
         }
 
-        value.put(type, v);
+        return value.put(type, v);
     }
 
     @NotNull
@@ -1917,8 +1917,9 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 }
 
                 Type returnType = isNonLocalReturn ? nonLocalReturn.returnType : ExpressionCodegen.this.returnType;
+                StackValue returnValue = null;
                 if (returnedExpression != null) {
-                    gen(returnedExpression, returnType);
+                    returnValue = gen(returnedExpression, returnType);
                 }
 
                 Label afterReturnLabel = new Label();
