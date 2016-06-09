@@ -39,6 +39,7 @@ import org.jetbrains.kotlin.codegen.context.*;
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension;
 import org.jetbrains.kotlin.codegen.inline.*;
 import org.jetbrains.kotlin.codegen.intrinsics.*;
+import org.jetbrains.kotlin.codegen.llvm.ExpressionCodegenLLVM;
 import org.jetbrains.kotlin.codegen.pseudoInsns.PseudoInsnsKt;
 import org.jetbrains.kotlin.codegen.signature.BothSignatureWriter;
 import org.jetbrains.kotlin.codegen.signature.JvmSignatureWriter;
@@ -111,6 +112,7 @@ import static org.jetbrains.kotlin.types.expressions.ExpressionTypingUtils.isFun
 import static org.jetbrains.org.objectweb.asm.Opcodes.*;
 
 public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> implements LocalLookup {
+    public final MethodVisitor originalVisitor;
     private final GenerationState state;
     final KotlinTypeMapper typeMapper;
     private final BindingContext bindingContext;
@@ -148,6 +150,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             @NotNull MemberCodegen<?> parentCodegen,
             @NotNull StackValueFactory stackValueFactory
     ) {
+        originalVisitor = mv;
         this.state = state;
         this.typeMapper = state.getTypeMapper();
         this.bindingContext = state.getBindingContext();
@@ -639,7 +642,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         protected final KotlinType elementType;
         protected final Type asmElementType;
 
-        protected int loopParameterVar;
+        protected StackValue loopParameterVar;
         protected Type loopParameterType;
 
         private AbstractForLoopGenerator(@NotNull KtForExpression forExpression) {
@@ -665,15 +668,15 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 // E e = tmp<iterator>.next()
                 final VariableDescriptor parameterDescriptor = bindingContext.get(VALUE_PARAMETER, loopParameter);
                 loopParameterType = asmType(parameterDescriptor.getType());
-                loopParameterVar = myFrameMap.enter(parameterDescriptor, loopParameterType);
+                loopParameterVar = enter(parameterDescriptor, loopParameterType);
                 scheduleLeaveVariable(new Runnable() {
                     @Override
                     public void run() {
                         myFrameMap.leave(parameterDescriptor);
-                        v.visitLocalVariable(parameterDescriptor.getName().asString(),
+                        /*v.visitLocalVariable(parameterDescriptor.getName().asString(),
                                              loopParameterType.getDescriptor(), null,
                                              loopParameterStartLabel, bodyEnd,
-                                             loopParameterVar);
+                                             loopParameterVar);*/
                     }
                 });
             }
@@ -725,7 +728,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 assert resolvedCall != null : "Resolved call is null for " + variableDeclaration.getText();
                 Call call = makeFakeCall(new TransientReceiver(elementType));
 
-                StackValue value = invokeFunction(call, resolvedCall, stackValueFactory.local(loopParameterVar, asmElementType));
+                StackValue value = invokeFunction(call, resolvedCall, loopParameterVar);
                 stackValueFactory.local(componentVarIndex, componentAsmType).store(value, v);
                 v.visitLabel(variableStartLabel);
             }
@@ -743,15 +746,15 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             leaveVariableTasks.add(runnable);
         }
 
-        protected int createLoopTempVariable(final Type type) {
-            int varIndex = myFrameMap.enterTemp(type);
+        protected StackValue createLoopTempVariable(Type type) {
+            final StackValue var = enterTemp(type);
             scheduleLeaveVariable(new Runnable() {
                 @Override
                 public void run() {
-                    myFrameMap.leaveTemp(type);
+                    leaveTemp(var);
                 }
             });
-            return varIndex;
+            return var;
         }
 
         public void afterBody(@NotNull Label loopExit) {
@@ -774,11 +777,10 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 @NotNull Type loopRangeType,
                 @NotNull String getterName,
                 @NotNull Type getterReturnType,
-                @NotNull Type varType,
-                int varToStore
+                @NotNull StackValue varToStore
         ) {
             v.invokevirtual(loopRangeType.getInternalName(), getterName, "()" + getterReturnType.getDescriptor(), false);
-            stackValueFactory.local(varToStore, varType).store(stackValueFactory.onStack(getterReturnType), v);
+            varToStore.store(stackValueFactory.onStack(getterReturnType), v);
         }
     }
 
@@ -788,9 +790,21 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         }
     }
 
+    protected StackValue enter(@NotNull DeclarationDescriptor descriptor, @NotNull Type type) {
+        return stackValueFactory.local(myFrameMap.enter(descriptor, type), type);
+    }
+    
+    protected StackValue enterTemp(@NotNull Type type) {
+        return stackValueFactory.local(myFrameMap.enterTemp(type), type);
+    }
+
+    protected void leaveTemp(@NotNull StackValue stackValue) {
+        myFrameMap.leaveTemp(stackValue.type);
+    }
+
     private class IteratorForLoopGenerator extends AbstractForLoopGenerator {
 
-        private int iteratorVarIndex;
+        private StackValue iteratorVar;
         private final ResolvedCall<FunctionDescriptor> iteratorCall;
         private final ResolvedCall<FunctionDescriptor> nextCall;
         private final Type asmTypeForIterator;
@@ -819,9 +833,8 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
             // Iterator<E> tmp<iterator> = c.iterator()
 
-            iteratorVarIndex = createLoopTempVariable(asmTypeForIterator);
-
-            stackValueFactory.local(iteratorVarIndex, asmTypeForIterator).store(invokeFunction(iteratorCall, stackValueFactory.none()), v);
+            iteratorVar = createLoopTempVariable(asmTypeForIterator);
+            iteratorVar.store(invokeFunction(iteratorCall, stackValueFactory.none()), v);
         }
 
         @Override
@@ -837,7 +850,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                                                                       LOOP_RANGE_HAS_NEXT_RESOLVED_CALL, loopRange,
                                                                       "No hasNext() function " + DiagnosticUtils.atLocation(loopRange));
             @SuppressWarnings("ConstantConditions") Call fakeCall = makeFakeCall(new TransientReceiver(iteratorCall.getResultingDescriptor().getReturnType()));
-            StackValue result = invokeFunction(fakeCall, hasNextCall, stackValueFactory.local(iteratorVarIndex, asmTypeForIterator));
+            StackValue result = invokeFunction(fakeCall, hasNextCall, iteratorVar);
             result.put(result.type, v);
 
             FunctionDescriptor hasNext = hasNextCall.getResultingDescriptor();
@@ -853,9 +866,9 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         protected void assignToLoopParameter() {
             @SuppressWarnings("ConstantConditions") Call fakeCall =
                     makeFakeCall(new TransientReceiver(iteratorCall.getResultingDescriptor().getReturnType()));
-            StackValue value = invokeFunction(fakeCall, nextCall, stackValueFactory.local(iteratorVarIndex, asmTypeForIterator));
+            StackValue value = invokeFunction(fakeCall, nextCall, iteratorVar);
             //noinspection ConstantConditions
-            stackValueFactory.local(loopParameterVar, loopParameterType).store(value, v);
+            loopParameterVar.store(value, v);
         }
 
         @Override
@@ -864,8 +877,8 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     }
 
     private class ForInArrayLoopGenerator extends AbstractForLoopGenerator {
-        private int indexVar;
-        private int arrayVar;
+        private StackValue indexVar;
+        private StackValue arrayVar;
         private final KotlinType loopRangeType;
 
         private ForInArrayLoopGenerator(@NotNull KtForExpression forExpression) {
@@ -883,16 +896,14 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             StackValue value = gen(loopRange);
             Type asmLoopRangeType = asmType(loopRangeType);
             if (value instanceof StackValue.Local && value.type.equals(asmLoopRangeType)) {
-                arrayVar = ((StackValue.Local) value).index; // no need to copy local variable into another variable
+                arrayVar = value; // no need to copy local variable into another variable
             }
             else {
                 arrayVar = createLoopTempVariable(OBJECT_TYPE);
-                value.put(asmLoopRangeType, v);
-                v.store(arrayVar, OBJECT_TYPE);
+                arrayVar.store(value, v);
             }
 
-            v.iconst(0);
-            v.store(indexVar, Type.INT_TYPE);
+            indexVar.store(stackValueFactory.constant(0, Type.INT_TYPE), v);
         }
 
         @Override
@@ -901,8 +912,8 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
         @Override
         public void checkPreCondition(@NotNull Label loopExit) {
-            v.load(indexVar, Type.INT_TYPE);
-            v.load(arrayVar, OBJECT_TYPE);
+            indexVar.put(Type.INT_TYPE, v);
+            arrayVar.put(OBJECT_TYPE, v);
             v.arraylength();
             v.ificmpge(loopExit);
         }
@@ -916,22 +927,21 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             else {
                 arrayElParamType = asmElementType;
             }
-
-            v.load(arrayVar, OBJECT_TYPE);
-            v.load(indexVar, Type.INT_TYPE);
+            arrayVar.put(OBJECT_TYPE, v);
+            indexVar.put(Type.INT_TYPE, v);
             v.aload(arrayElParamType);
             stackValueFactory.onStack(arrayElParamType).put(asmElementType, v);
-            v.store(loopParameterVar, asmElementType);
+            loopParameterVar.store(stackValueFactory.onStack(asmElementType), v);
         }
 
         @Override
         protected void increment(@NotNull Label loopExit) {
-            v.iinc(indexVar, 1);
+            v.iinc(((StackValue.Local)indexVar).index, 1);
         }
     }
 
     private abstract class AbstractForInProgressionOrRangeLoopGenerator extends AbstractForLoopGenerator {
-        protected int endVar;
+        protected StackValue endVar;
 
         private StackValue loopParameter;
 
@@ -959,10 +969,10 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         }
 
         protected void checkPostCondition(@NotNull Label loopExit) {
-            assert endVar != -1 :
+            assert endVar != null :
                     "endVar must be allocated, endVar = " + endVar;
             loopParameter().put(asmElementType, v);
-            v.load(endVar, asmElementType);
+            endVar.put(asmElementType, v);
             if (asmElementType.getSort() == Type.LONG) {
                 v.lcmp();
                 v.ifeq(loopExit);
@@ -979,7 +989,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         @NotNull
         protected StackValue loopParameter() {
             if (loopParameter == null) {
-                loopParameter = stackValueFactory.local(loopParameterVar, loopParameterType);
+                loopParameter = loopParameterVar;
             }
             return loopParameter;
         }
@@ -1002,7 +1012,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         @Override
         public void checkEmptyLoop(@NotNull Label loopExit) {
             loopParameter().put(asmElementType, v);
-            v.load(endVar, asmElementType);
+            endVar.put(asmElementType, v);
             if (asmElementType.getSort() == Type.LONG) {
                 v.lcmp();
                 v.ifgt(loopExit);
@@ -1021,7 +1031,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             checkPostCondition(loopExit);
 
             if (loopParameterType == Type.INT_TYPE) {
-                v.iinc(loopParameterVar, 1);
+                v.iinc(((StackValue.Local)loopParameterVar).index, 1);
             }
             else {
                 StackValue loopParameter = loopParameter();
@@ -1046,10 +1056,10 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         @Override
         protected void storeRangeStartAndEnd() {
             gen(rangeCall.left, loopParameterType);
-            v.store(loopParameterVar, loopParameterType);
+            loopParameterVar.store(stackValueFactory.onStack(loopParameterType), v);
 
             gen(rangeCall.right, asmElementType);
-            v.store(endVar, asmElementType);
+            endVar.store(stackValueFactory.onStack(asmElementType), v);
         }
     }
 
@@ -1067,13 +1077,13 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             v.dup();
 
             // ranges inherit first and last from corresponding progressions
-            generateRangeOrProgressionProperty(asmLoopRangeType, "getFirst", asmElementType, loopParameterType, loopParameterVar);
-            generateRangeOrProgressionProperty(asmLoopRangeType, "getLast", asmElementType, asmElementType, endVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getFirst", asmElementType, loopParameterVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getLast", asmElementType, endVar);
         }
     }
 
     private class ForInProgressionExpressionLoopGenerator extends AbstractForInProgressionOrRangeLoopGenerator {
-        private int incrementVar;
+        private StackValue incrementVar;
         private Type incrementType;
 
         private ForInProgressionExpressionLoopGenerator(@NotNull KtForExpression forExpression) {
@@ -1099,16 +1109,16 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             v.dup();
             v.dup();
 
-            generateRangeOrProgressionProperty(asmLoopRangeType, "getFirst", asmElementType, loopParameterType, loopParameterVar);
-            generateRangeOrProgressionProperty(asmLoopRangeType, "getLast", asmElementType, asmElementType, endVar);
-            generateRangeOrProgressionProperty(asmLoopRangeType, "getStep", incrementType, incrementType, incrementVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getFirst", asmElementType, loopParameterVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getLast", asmElementType, endVar);
+            generateRangeOrProgressionProperty(asmLoopRangeType, "getStep", incrementType, incrementVar);
         }
 
         @Override
         public void checkEmptyLoop(@NotNull Label loopExit) {
             loopParameter().put(asmElementType, v);
-            v.load(endVar, asmElementType);
-            v.load(incrementVar, incrementType);
+            endVar.put(asmElementType, v);
+            incrementVar.put(asmElementType, v);
 
             Label negativeIncrement = new Label();
             Label afterIf = new Label();
@@ -1153,7 +1163,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
             StackValue loopParameter = loopParameter();
             loopParameter.put(asmElementType, v);
-            v.load(incrementVar, asmElementType);
+            incrementVar.put(asmElementType, v);
             v.add(asmElementType);
 
             if (asmElementType == Type.BYTE_TYPE || asmElementType == Type.SHORT_TYPE || asmElementType == Type.CHAR_TYPE) {
@@ -1575,7 +1585,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         throw new IllegalStateException("Can't get outer value in " + this + " for " + d);
     }
 
-    private StackValue generateBlock(
+    protected StackValue generateBlock(
             List<KtExpression> statements,
             boolean isStatement,
             Label labelBeforeLastExpression,
@@ -1633,13 +1643,13 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     }
 
     @NotNull
-    private Type getVariableType(@NotNull VariableDescriptor variableDescriptor) {
+    protected Type getVariableType(@NotNull VariableDescriptor variableDescriptor) {
         Type sharedVarType = typeMapper.getSharedVarType(variableDescriptor);
         return sharedVarType != null ? sharedVarType : getVariableTypeNoSharing(variableDescriptor);
     }
 
     @NotNull
-    private Type getVariableTypeNoSharing(@NotNull VariableDescriptor variableDescriptor) {
+    protected Type getVariableTypeNoSharing(@NotNull VariableDescriptor variableDescriptor) {
         KotlinType varType = isDelegatedLocalVariable(variableDescriptor)
                              ? JvmCodegenUtil.getPropertyDelegateType((VariableDescriptorWithAccessors) variableDescriptor, bindingContext)
                              : variableDescriptor.getType();
@@ -1672,7 +1682,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             DeclarationDescriptor descriptor = bindingContext.get(DECLARATION_TO_DESCRIPTOR, statement);
             assert descriptor instanceof FunctionDescriptor : "Couldn't find function declaration in binding context " + statement.getText();
             Type type = asmTypeForAnonymousClass(bindingContext, (FunctionDescriptor) descriptor);
-            myFrameMap.enter(descriptor, type);
+            enter(descriptor, type);
         }
     }
 
@@ -1681,10 +1691,10 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         assert variableDescriptor != null : "Couldn't find variable declaration in binding context " + statement.getText();
 
         Type type = getVariableType(variableDescriptor);
-        int index = myFrameMap.enter(variableDescriptor, type);
+        StackValue localVar = enter(variableDescriptor, type);
 
         if (isDelegatedLocalVariable(variableDescriptor)) {
-            myFrameMap.enter(getDelegatedLocalVariableMetadata(variableDescriptor, bindingContext), AsmTypes.K_PROPERTY0_TYPE);
+            enter(getDelegatedLocalVariableMetadata(variableDescriptor, bindingContext), AsmTypes.K_PROPERTY0_TYPE);
         }
 
         if (isSharedVarType(type)) {
@@ -1692,7 +1702,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             v.anew(type);
             v.dup();
             v.invokespecial(type.getInternalName(), "<init>", "()V", false);
-            v.store(index, OBJECT_TYPE);
+            localVar.store(StackValue.onStack(OBJECT_TYPE), v);
         }
     }
 
@@ -1927,12 +1937,11 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     public void generateFinallyBlocksIfNeeded(Type returnType, @NotNull Label afterReturnLabel) {
         if (hasFinallyBlocks()) {
             if (!Type.VOID_TYPE.equals(returnType)) {
-                int returnValIndex = myFrameMap.enterTemp(returnType);
-                StackValue localForReturnValue = stackValueFactory.local(returnValIndex, returnType);
+                StackValue localForReturnValue = enterTemp(returnType);
                 localForReturnValue.store(stackValueFactory.onStack(returnType), v);
                 doFinallyOnReturn(afterReturnLabel);
                 localForReturnValue.put(returnType, v);
-                myFrameMap.leaveTemp(returnType);
+                leaveTemp(localForReturnValue);
             }
             else {
                 doFinallyOnReturn(afterReturnLabel);
@@ -1989,9 +1998,10 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
             v.areturn(returnType);
         }
+        ExpressionCodegenLLVM.returnExpression(this, expr);
     }
 
-    private static boolean endsWithReturn(KtElement bodyExpression) {
+    public static boolean endsWithReturn(KtElement bodyExpression) {
         if (bodyExpression instanceof KtBlockExpression) {
             List<KtExpression> statements = ((KtBlockExpression) bodyExpression).getStatements();
             return statements.size() > 0 && statements.get(statements.size() - 1) instanceof KtReturnExpression;
@@ -2159,7 +2169,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         return adjustVariableValue(stackValueFactory.local(parameterOffsetInConstructor, parentResult.type), descriptor);
     }
 
-    private StackValue stackValueForLocal(DeclarationDescriptor descriptor, int index) {
+    protected StackValue stackValueForLocal(DeclarationDescriptor descriptor, int index) {
         if (descriptor instanceof VariableDescriptor) {
             VariableDescriptor variableDescriptor = (VariableDescriptor) descriptor;
 
@@ -3382,7 +3392,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 value.put(asmBaseType, v);
                 AsmUtil.dup(v, asmBaseType);
 
-                StackValue previousValue = stackValueFactory.local(myFrameMap.enterTemp(asmBaseType), asmBaseType);
+                StackValue previousValue = enterTemp(asmBaseType);
                 previousValue.store(StackValue.onStack(asmBaseType), v);
 
                 Type storeType;
@@ -3400,7 +3410,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
                 previousValue.put(asmBaseType, v);
 
-                myFrameMap.leaveTemp(asmBaseType);
+                leaveTemp(previousValue);
 
                 return Unit.INSTANCE;
             }
@@ -3435,11 +3445,10 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
         TransientReceiver initializerAsReceiver = new TransientReceiver(initializerType);
 
-        int tempVarIndex = myFrameMap.enterTemp(initializerAsmType);
+        StackValue local = enterTemp(initializerAsmType);
 
         gen(initializer, initializerAsmType);
-        v.store(tempVarIndex, initializerAsmType);
-        StackValue local = stackValueFactory.local(tempVarIndex, initializerAsmType);
+        local.store(StackValue.onStack(initializerAsmType), v);
 
         for (KtDestructuringDeclarationEntry variableDeclaration : multiDeclaration.getEntries()) {
             ResolvedCall<FunctionDescriptor> resolvedCall = bindingContext.get(COMPONENT_RESOLVED_CALL, variableDeclaration);
@@ -3449,10 +3458,9 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         }
 
         if (initializerAsmType.getSort() == Type.OBJECT || initializerAsmType.getSort() == Type.ARRAY) {
-            v.aconst(null);
-            v.store(tempVarIndex, initializerAsmType);
+            local.store(StackValue.constant(null, initializerAsmType), v);
         }
-        myFrameMap.leaveTemp(initializerAsmType);
+        leaveTemp(local);
 
         return stackValueFactory.none();
     }
@@ -3465,7 +3473,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     }
 
     @NotNull
-    private StackValue adjustVariableValue(@NotNull StackValue varValue, DeclarationDescriptor descriptor) {
+    protected StackValue adjustVariableValue(@NotNull StackValue varValue, DeclarationDescriptor descriptor) {
         if (!isDelegatedLocalVariable(descriptor)) return varValue;
 
         VariableDescriptorWithAccessors variableDescriptor = (VariableDescriptorWithAccessors) descriptor;
@@ -3493,7 +3501,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
 
         Type varType = getVariableTypeNoSharing(variableDescriptor);
 
-        StackValue storeTo = sharedVarType == null ? stackValueFactory.local(index, varType) : StackValue.shared(index, varType);
+        StackValue storeTo = sharedVarType == null ? stackValueForLocal(variableDescriptor, index) : StackValue.shared(index, varType);
 
         storeTo.putReceiver(v, false);
         initializer.put(initializer.type, v);
@@ -3750,10 +3758,10 @@ The "returned" value of try expression with no finally is either the last expres
 
                 gen(expression.getTryBlock(), expectedAsmType);
 
-                int savedValue = -1;
+                StackValue savedValue = null;
                 if (!isStatement) {
-                    savedValue = myFrameMap.enterTemp(expectedAsmType);
-                    v.store(savedValue, expectedAsmType);
+                    savedValue = enterTemp(expectedAsmType);
+                    savedValue.store(stackValueFactory.onStack(expectedAsmType), v);
                 }
 
                 Label tryEnd = new Label();
@@ -3788,7 +3796,7 @@ The "returned" value of try expression with no finally is either the last expres
                     gen(catchBody, expectedAsmType);
 
                     if (!isStatement) {
-                        v.store(savedValue, expectedAsmType);
+                        savedValue.store(stackValueFactory.onStack(expectedAsmType), v);
                     }
 
                     myFrameMap.leave(descriptor);
@@ -3809,8 +3817,8 @@ The "returned" value of try expression with no finally is either the last expres
                 if (finallyBlock != null) {
                     Label defaultCatchStart = new Label();
                     v.mark(defaultCatchStart);
-                    int savedException = myFrameMap.enterTemp(JAVA_THROWABLE_TYPE);
-                    v.store(savedException, JAVA_THROWABLE_TYPE);
+                    StackValue savedException = enterTemp(JAVA_THROWABLE_TYPE);
+                    savedException.store(stackValueFactory.onStack(JAVA_THROWABLE_TYPE), v);
 
                     Label defaultCatchEnd = new Label();
                     v.mark(defaultCatchEnd);
@@ -3822,8 +3830,8 @@ The "returned" value of try expression with no finally is either the last expres
 
                     genFinallyBlockOrGoto(finallyBlockStackElement, null, null);
 
-                    v.load(savedException, JAVA_THROWABLE_TYPE);
-                    myFrameMap.leaveTemp(JAVA_THROWABLE_TYPE);
+                    savedException.put(JAVA_THROWABLE_TYPE, v);
+                    leaveTemp(savedException);
 
                     v.athrow();
 
@@ -3834,8 +3842,8 @@ The "returned" value of try expression with no finally is either the last expres
                 v.mark(end);
 
                 if (!isStatement) {
-                    v.load(savedValue, expectedAsmType);
-                    myFrameMap.leaveTemp(expectedAsmType);
+                    savedValue.put(expectedAsmType, v);
+                    leaveTemp(savedValue);
                 }
 
                 if (finallyBlock != null) {
@@ -4010,11 +4018,11 @@ The "returned" value of try expression with no finally is either the last expres
                     return Unit.INSTANCE;
                 }
 
-                int subjectLocal = expr != null ? myFrameMap.enterTemp(subjectType) : -1;
-                if (subjectLocal != -1) {
+                StackValue subjectLocal = expr != null ? enterTemp(subjectType) : null;
+                if (subjectLocal != null) {
                     gen(expr, subjectType);
-                    tempVariables.put(expr, stackValueFactory.local(subjectLocal, subjectType));
-                    v.store(subjectLocal, subjectType);
+                    tempVariables.put(expr, subjectLocal);
+                    subjectLocal.store(stackValueFactory.onStack(subjectType), v);
                 }
 
                 Label end = new Label();
@@ -4031,7 +4039,7 @@ The "returned" value of try expression with no finally is either the last expres
                     if (!whenEntry.isElse()) {
                         KtWhenCondition[] conditions = whenEntry.getConditions();
                         for (int i = 0; i < conditions.length; i++) {
-                            StackValue conditionValue = generateWhenCondition(subjectType, subjectLocal, conditions[i]);
+                            StackValue conditionValue = generateWhenCondition(subjectLocal, conditions[i]);
                             BranchedValue.Companion.condJump(conditionValue, nextCondition, true, v);
                             if (i < conditions.length - 1) {
                                 v.goTo(thisEntry);
@@ -4056,7 +4064,7 @@ The "returned" value of try expression with no finally is either the last expres
                 markLineNumber(expression, isStatement);
                 v.mark(end);
 
-                myFrameMap.leaveTemp(subjectType);
+                leaveTemp(subjectLocal);
                 tempVariables.remove(expr);
                 return null;
             }
@@ -4086,14 +4094,13 @@ The "returned" value of try expression with no finally is either the last expres
         }
     }
 
-    private StackValue generateWhenCondition(Type subjectType, int subjectLocal, KtWhenCondition condition) {
+    private StackValue generateWhenCondition(StackValue match, KtWhenCondition condition) {
         if (condition instanceof KtWhenConditionInRange) {
             KtWhenConditionInRange conditionInRange = (KtWhenConditionInRange) condition;
-            return generateIn(stackValueFactory.local(subjectLocal, subjectType),
+            return generateIn(match,
                               conditionInRange.getRangeExpression(),
                               conditionInRange.getOperationReference());
         }
-        StackValue match = subjectLocal == -1 ? null : stackValueFactory.local(subjectLocal, subjectType);
         if (condition instanceof KtWhenConditionIsPattern) {
             KtWhenConditionIsPattern patternCondition = (KtWhenConditionIsPattern) condition;
             return generateIsCheck(match, patternCondition.getTypeReference(), patternCondition.isNegated());
