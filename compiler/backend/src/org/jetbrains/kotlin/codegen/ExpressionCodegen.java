@@ -2501,10 +2501,14 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             @NotNull CallGenerator callGenerator,
             @NotNull ArgumentGenerator argumentGenerator
     ) {
+        List<StackValue> argRefs = new ArrayList<StackValue>();
         boolean isConstructor = resolvedCall.getResultingDescriptor() instanceof ConstructorDescriptor;
         if (!isConstructor) { // otherwise already
             receiver = StackValue.receiver(resolvedCall, receiver, this, callableMethod);
-            receiver.put(receiver.type, v);
+            StackValue receiverRef = receiver.put(receiver.type, v);
+            if (receiverRef != StackValue.none()) {
+                argRefs.add(receiverRef);
+            }
             callableMethod.afterReceiverGeneration(v);
         }
 
@@ -2522,7 +2526,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         }
 
         boolean defaultMaskWasGenerated = defaultArgs.generateOnStackIfNeeded(callGenerator, isConstructor);
-
+        argRefs.addAll(defaultArgs.getGeneratedParams());
         // Extra constructor marker argument
         if (callableMethod instanceof CallableMethod) {
             List<JvmMethodParameterSignature> callableParameters = ((CallableMethod) callableMethod).getValueParameters();
@@ -2533,7 +2537,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             }
         }
 
-        StackValue result = callGenerator.genCall(callableMethod, resolvedCall, defaultMaskWasGenerated, this, defaultArgs.getGeneratedParams());
+        StackValue result = callGenerator.genCall(callableMethod, resolvedCall, defaultMaskWasGenerated, this, argRefs);
 
         KotlinType returnType = resolvedCall.getResultingDescriptor().getReturnType();
         if (returnType != null && KotlinBuiltIns.isNothing(returnType)) {

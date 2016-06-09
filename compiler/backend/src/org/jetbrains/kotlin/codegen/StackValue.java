@@ -1563,11 +1563,11 @@ public abstract class StackValue {
                 currentExtensionReceiver = StackValue.onStack(currentExtensionReceiver.type);
             }
 
-            dispatchReceiver.put(hasExtensionReceiver ? dispatchReceiver.type : type, v);
+            StackValue dispatchResult = dispatchReceiver.put(hasExtensionReceiver ? dispatchReceiver.type : type, v);
 
             currentExtensionReceiver
                     .moveToTopOfStack(hasExtensionReceiver ? type : currentExtensionReceiver.type, v, dispatchReceiver.type.getSize());
-            return none();
+            return dispatchResult;
         }
 
         @Override

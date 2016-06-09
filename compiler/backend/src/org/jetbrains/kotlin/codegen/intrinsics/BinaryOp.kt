@@ -20,9 +20,11 @@ import org.jetbrains.kotlin.codegen.AsmUtil.numberFunctionOperandType
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
 import org.jetbrains.kotlin.codegen.StackValue
-import org.jetbrains.org.objectweb.asm.Opcodes.ISHL
-import org.jetbrains.org.objectweb.asm.Opcodes.ISHR
-import org.jetbrains.org.objectweb.asm.Opcodes.IUSHR
+import org.jetbrains.kotlin.codegen.llvm.ExpressionCodegenLLVM
+import org.jetbrains.kotlin.codegen.llvm.LLVMResult
+import org.jetbrains.kotlin.codegen.llvm.toLLVMResult
+import org.jetbrains.org.objectweb.asm.Opcodes
+import org.jetbrains.org.objectweb.asm.Opcodes.*
 import org.jetbrains.org.objectweb.asm.Type
 
 class BinaryOp(private val opcode: Int) : IntrinsicMethod() {
@@ -37,10 +39,25 @@ class BinaryOp(private val opcode: Int) : IntrinsicMethod() {
 
         return createBinaryIntrinsicCallable(returnType, paramType, operandType) {
             codegen, refs ->
+            if (codegen is ExpressionCodegenLLVM) {
+                llvmOperation(codegen, refs, opcode, paramType)
+            } else {
                 codegen.v.visitInsn(returnType.getOpcode(opcode))
-            if (operandType != returnType)
+                if (operandType != returnType)
                     StackValue.coerce(operandType, returnType, codegen.v)
-            StackValue.none()
+                StackValue.none()
+            }
         }
     }
+
+    private fun llvmOperation(codegen: ExpressionCodegenLLVM, args: List<StackValue>, opcode: Int, paramType: Type): StackValue {
+        val builder = codegen.builder
+        val value = when (opcode) {
+            Opcodes.IADD, Opcodes.LADD,  Opcodes.FADD, Opcodes.DADD -> builder.buildAdd(args[0].toLLVMResult, args[1].toLLVMResult, "add")
+            Opcodes.ISUB, Opcodes.LSUB,  Opcodes.FSUB, Opcodes.DSUB-> builder.buildSub(args[0].toLLVMResult, args[1].toLLVMResult, "sub")
+            else -> throw UnsupportedOperationException("$opcode");
+        }
+        return LLVMResult(value, paramType, builder)
+    }
+
 }
