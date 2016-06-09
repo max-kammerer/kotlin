@@ -125,7 +125,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     private final CodegenStatementVisitor statementVisitor = new CodegenStatementVisitor(this);
     private final MemberCodegen<?> parentCodegen;
     @NotNull
-    protected final StackValueFactory stackValueFactory;
+    public final StackValueFactory stackValueFactory;
     private final TailRecursionCodegen tailRecursionCodegen;
     public final CallGenerator defaultCallGenerator = new CallGenerator.DefaultCallGenerator(this);
 
@@ -456,7 +456,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         return generateIfExpression(expression, false);
     }
 
-    /* package */ StackValue generateIfExpression(@NotNull final KtIfExpression expression, final boolean isStatement) {
+    protected StackValue generateIfExpression(@NotNull final KtIfExpression expression, final boolean isStatement) {
         final Type asmType = isStatement ? Type.VOID_TYPE : expressionType(expression);
         final StackValue condition = gen(expression.getCondition());
 

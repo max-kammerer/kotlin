@@ -19,9 +19,8 @@ package org.jetbrains.kotlin.codegen.llvm
 import org.jetbrains.kotlin.codegen.ExpressionCodegen
 import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.descriptors.VariableDescriptor
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.org.objectweb.asm.Label
+import org.jetbrains.kotlin.psi.KtIfExpression
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
@@ -38,8 +37,10 @@ class ExpressionCodegenLLVM(
 
     val entry = llvmFunction.appendBasicBlock("entry")
 
-    val indexToVariable = hashMapOf<Int, Variable>()
     val descToVariable = hashMapOf<DeclarationDescriptor, StackValue>()
+
+    val llvmFactory = stackValueFactory as LLVMStackValueFactory
+
 
     init {
         builder.positionBuilderAtEnd(entry)
@@ -64,23 +65,38 @@ class ExpressionCodegenLLVM(
         }
     }
 
-    override fun findLocalOrCapturedValue(descriptor: DeclarationDescriptor): StackValue? {
-        return super.findLocalOrCapturedValue(descriptor)
-    }
-
     override fun enter(descriptor: DeclarationDescriptor, type: Type): StackValue? {
         return descToVariable.getOrPut(descriptor) {
             super.enter(descriptor, type)
         }
     }
 
-    override fun generateBlock(statements: MutableList<KtExpression>?, isStatement: Boolean, labelBeforeLastExpression: Label?, labelBlockEnd: Label?): StackValue? {
-        return super.generateBlock(statements, isStatement, labelBeforeLastExpression, labelBlockEnd)
+    override fun generateIfExpression(expression: KtIfExpression, isStatement: Boolean): StackValue? {
+        val asmType = if (isStatement) Type.VOID_TYPE else expressionType(expression)
+        val condition = gen(expression.condition)
+
+        val thenExpression = expression.then
+        val elseExpression = expression.`else`
+
+        return LLVMOperation(asmType, builder) {
+            val iftrue = llvmFunction.appendBasicBlock("iftrue")
+            val iffalse = llvmFunction.appendBasicBlock("iffalse")
+            val end = llvmFunction.appendBasicBlock("end")
+
+            builder.buildCondBr(condition.put(condition.type, v).toLLVMResult, iftrue, iffalse)
+            builder.positionBuilderAtEnd(iftrue)
+            gen(thenExpression, asmType)
+            builder.buildBr(end)
+
+            builder.positionBuilderAtEnd(iffalse)
+            gen(elseExpression, asmType)
+            builder.buildBr(end)
+            builder.positionBuilderAtEnd(end)
+            //TODO support expression
+            stackValueFactory.constant(1, Type.INT_TYPE).toLLVMValue
+        }
     }
 
-    override fun lookupLocal(descriptor: DeclarationDescriptor?): Boolean {
-        return super.lookupLocal(descriptor)
-    }
 
     companion object {
         @JvmStatic
@@ -91,3 +107,9 @@ class ExpressionCodegenLLVM(
     }
 }
 
+val StackValue.toLLVMResult: Value
+    get() = (this as LLVMStackValue).toLLVMValue()
+
+
+val StackValue.toLLVMValue: Value
+    get() = (this as LLVMStackValue).toLLVMValue()

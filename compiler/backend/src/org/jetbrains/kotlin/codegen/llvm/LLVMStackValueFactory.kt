@@ -90,7 +90,7 @@ abstract class LLVMStackValue(val builder: Builder, type: Type) : StackValue(typ
     abstract fun putLLVMSelector(type: Type): Value
 
     override fun putSelector(type: Type, v: InstructionAdapter) {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+        put(type, v)
     }
 
     override fun put(type: Type, v: InstructionAdapter): StackValue? {
@@ -134,4 +134,12 @@ class Result(val result: Value, val type: Type, builder: Builder) : LLVMStackVal
     }
 
     override fun toLLVMValue(): Value = result
+}
+
+class LLVMOperation(val type: Type, builder: Builder, val operation: LLVMOperation.() -> Value) : LLVMStackValue(builder, type) {
+    override fun putLLVMSelector(type: Type): Value {
+        return toLLVMValue()
+    }
+
+    override fun toLLVMValue(): Value = operation()
 }
