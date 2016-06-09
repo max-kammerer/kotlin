@@ -3176,7 +3176,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 v.dup();
 
                 v.ifnull(ifNull);
-                StackValue.onStack(leftType).put(exprType, v);
+                stackValueFactory.onStack(leftType).put(exprType, v);
 
                 Label end = new Label();
                 v.goTo(end);
@@ -3250,12 +3250,12 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             value = StackValue.complexWriteReadReceiver(value);
         }
         value.put(lhsType, v);
-        StackValue receiver = StackValue.onStack(lhsType);
+        StackValue receiver = stackValueFactory.onStack(lhsType);
 
         callable.invokeMethodWithArguments(resolvedCall, receiver, this).put(callable.getReturnType(), v);
 
         if (keepReturnValue) {
-            value.store(StackValue.onStack(callable.getReturnType()), v, true);
+            value.store(stackValueFactory.onStack(callable.getReturnType()), v, true);
         }
     }
 
@@ -3393,7 +3393,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 AsmUtil.dup(v, asmBaseType);
 
                 StackValue previousValue = enterTemp(asmBaseType);
-                previousValue.store(StackValue.onStack(asmBaseType), v);
+                previousValue.store(stackValueFactory.onStack(asmBaseType), v);
 
                 Type storeType;
                 if (isPrimitiveNumberClassDescriptor && AsmUtil.isPrimitive(asmBaseType)) {
@@ -3401,12 +3401,12 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                     storeType = asmBaseType;
                 }
                 else {
-                    StackValue result = invokeFunction(resolvedCall, StackValue.onStack(asmBaseType));
+                    StackValue result = invokeFunction(resolvedCall, stackValueFactory.onStack(asmBaseType));
                     result.put(result.type, v);
                     storeType = result.type;
                 }
 
-                value.store(StackValue.onStack(storeType), v, true);
+                value.store(stackValueFactory.onStack(storeType), v, true);
 
                 previousValue.put(asmBaseType, v);
 
@@ -3448,7 +3448,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         StackValue local = enterTemp(initializerAsmType);
 
         gen(initializer, initializerAsmType);
-        local.store(StackValue.onStack(initializerAsmType), v);
+        local.store(stackValueFactory.onStack(initializerAsmType), v);
 
         for (KtDestructuringDeclarationEntry variableDeclaration : multiDeclaration.getEntries()) {
             ResolvedCall<FunctionDescriptor> resolvedCall = bindingContext.get(COMPONENT_RESOLVED_CALL, variableDeclaration);
