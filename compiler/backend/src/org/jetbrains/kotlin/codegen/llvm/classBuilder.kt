@@ -62,7 +62,7 @@ class ClassBuilder(val llvmState: LLVMState, val _delegate: ClassBuilder) : Dele
         val newMethod = super.newMethod(origin, access, name, desc, signature, exceptions)
         val argumentTypes = Type.getArgumentTypes(desc)
         val returnType = Type.getReturnType(desc)
-        val newFunction = clazz.addFunction(name, TypeRef.functionType(returnType.LLVMType, *argumentTypes.map { it.LLVMType }.toTypedArray()))
+        val newFunction = llvmState.createFunction(name, TypeRef.functionType(returnType.LLVMType, *argumentTypes.map { it.LLVMType }.toTypedArray()), clazz)
 
         return LLVMMethodVisitor(newFunction, newMethod)
     }

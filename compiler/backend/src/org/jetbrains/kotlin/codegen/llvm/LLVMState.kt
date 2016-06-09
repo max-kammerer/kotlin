@@ -17,24 +17,48 @@
 package org.jetbrains.kotlin.codegen.llvm
 
 import org.jetbrains.org.objectweb.asm.Type
-import org.llvm.Module
-import org.llvm.TypeRef
-import org.llvm.Value
-import org.llvm.binding.LLVMLibrary
+import org.llvm.*
 
 class LLVMState {
 
     val modules = linkedMapOf<String, Module>()
 
+    val name2Function = linkedMapOf<String, Value>()
+
     fun createClass(name: String): Module {
         return Module.createWithName(name.LLVMName).apply { modules.put(name, this) }
     }
 
-    companion object {
-
+    fun createFunction(name: String, type: TypeRef, clazz: Module): Value {
+        return clazz.addFunction(name, type).apply {
+            name2Function[name] = this
+        }
     }
 
     fun getAllModulesText() = modules.values.map { it.getContent() }.joinToString("\n")
+
+    fun evaluateFunction(fName: String, vararg params: String): String {
+        synchronized(LLVMState::class.java) {
+            val function = name2Function[fName] ?: return "Can't find function $fName"
+            val globalParent = function.globalParent
+            globalParent.verify()
+
+            val ee = ExecutionEngine.createForModule(globalParent)
+            // Compile and run!
+
+            val llvmParams = params.map { GenericValue.createInt(TypeRef.int32Type(), java.lang.Long.valueOf(it), true) }.toTypedArray()
+            val result = ee.runFunction(function, *llvmParams)
+            return ("" + result.toInt(true)).apply {
+                //result.dispose()
+                //ee.dispose()
+            }
+        }
+    }
+
+    fun free() {
+        //modules.values.forEach { it.dispose() }
+    }
+
 }
 
 

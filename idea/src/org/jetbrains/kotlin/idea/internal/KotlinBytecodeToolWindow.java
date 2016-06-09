@@ -243,6 +243,12 @@ public class KotlinBytecodeToolWindow extends JPanel implements Disposable {
 
         StringBuilder answer = new StringBuilder();
 
+        String evaluationResult = LLVMEvaluationKt.evaluate(state, ktFile);
+        if (!evaluationResult.isEmpty()) {
+            answer.append("EVALUATION:\n");
+            answer.append(evaluationResult);
+        }
+
         Collection<Diagnostic> diagnostics = state.getCollectedExtraJvmDiagnostics().all();
         if (!diagnostics.isEmpty()) {
             answer.append("// Backend Errors: \n");
@@ -265,9 +271,10 @@ public class KotlinBytecodeToolWindow extends JPanel implements Disposable {
             answer.append(" =================\n");
             answer.append(outputFile.asText()).append("\n\n");
         }
-
+        state.getLlvmState().free();
         return answer.toString();
     }
+
 
     @NotNull
     public static GenerationState compileSingleFile(@NotNull final KtFile ktFile, @NotNull CompilerConfiguration configuration) {
