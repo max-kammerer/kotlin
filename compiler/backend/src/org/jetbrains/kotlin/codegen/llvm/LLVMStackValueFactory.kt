@@ -74,8 +74,13 @@ class LLVMStackValueFactory(val builder: Builder) : StackValueFactory {
         throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun returnValue(type: Type, value: StackValue?): StackValue {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun returnInsn(returnType: Type, value: StackValue?, v: InstructionAdapter) {
+        if (returnType.equals(Type.VOID_TYPE)) {
+            builder.buildRetVoid()
+        }
+        else {
+            builder.buildRet((value as LLVMStackValue).toLLVMValue());
+        }
     }
 }
 

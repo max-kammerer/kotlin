@@ -17,7 +17,9 @@
 package org.jetbrains.kotlin.codegen
 
 import com.intellij.psi.tree.IElementType
+import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
+import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 
 interface StackValueFactory {
 
@@ -45,7 +47,7 @@ interface StackValueFactory {
 
     fun arrayElement(type: Type, array: StackValue, index: StackValue): StackValue
 
-    fun returnValue(type: Type, value: StackValue?): StackValue
+    fun returnInsn(returnType: Type, value: StackValue?, v: InstructionAdapter)
 
 }
 
@@ -75,7 +77,7 @@ object ByteCodeStackValueFactory : StackValueFactory {
 
     override fun arrayElement(type: Type, array: StackValue, index: StackValue) = StackValue.arrayElement(type, array, index)
 
-    override fun returnValue(type: Type, value: StackValue?): StackValue {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun returnInsn(returnType: Type, value: StackValue?, v: InstructionAdapter) {
+        v.visitInsn(returnType.getOpcode(Opcodes.IRETURN))
     }
 }

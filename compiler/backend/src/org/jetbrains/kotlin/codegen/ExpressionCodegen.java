@@ -1928,7 +1928,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                 if (isNonLocalReturn) {
                     InlineCodegenUtil.generateGlobalReturnFlag(v, nonLocalReturn.labelName);
                 }
-                v.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
+                stackValueFactory.returnInsn(returnType, returnValue, v);
                 v.mark(afterReturnLabel);
                 return Unit.INSTANCE;
             }
