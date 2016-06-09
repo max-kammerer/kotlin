@@ -691,7 +691,7 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
             }
         }
 
-        callableMethod.genInvokeInstruction(iv);
+        callableMethod.genInvokeInstruction(iv, generatedArgRefs);
 
         return StackValue.onStack(callableMethod.getReturnType());
     }

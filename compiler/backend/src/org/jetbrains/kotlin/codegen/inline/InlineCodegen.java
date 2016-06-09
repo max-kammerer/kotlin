@@ -136,7 +136,8 @@ public class InlineCodegen extends CallGenerator {
             @NotNull Callable callableMethod,
             @Nullable ResolvedCall<?> resolvedCall,
             boolean callDefault,
-            @NotNull ExpressionCodegen codegen
+            @NotNull ExpressionCodegen codegen,
+            @NotNull List<? extends StackValue> generatedArgRefs
     ) {
         if (!state.getInlineCycleReporter().enterIntoInlining(resolvedCall)) {
             generateStub(resolvedCall, codegen);
@@ -771,8 +772,9 @@ public class InlineCodegen extends CallGenerator {
         throw new IllegalStateException("Couldn't build context for " + descriptor);
     }
 
+    @NotNull
     @Override
-    public void genValueAndPut(
+    public StackValue genValueAndPut(
             @NotNull ValueParameterDescriptor valueParameterDescriptor,
             @NotNull KtExpression argumentExpression,
             @NotNull Type parameterType,
@@ -780,23 +782,29 @@ public class InlineCodegen extends CallGenerator {
     ) {
         if (isInliningParameter(argumentExpression, valueParameterDescriptor)) {
             rememberClosure(argumentExpression, parameterType, valueParameterDescriptor);
+            return StackValue.none();
         }
         else {
             StackValue value = codegen.gen(argumentExpression);
-            putValueIfNeeded(parameterType, value, valueParameterDescriptor.getIndex());
+            return putValueIfNeeded(parameterType, value, valueParameterDescriptor.getIndex());
         }
     }
 
+    @NotNull
     @Override
-    public void putValueIfNeeded(@NotNull Type parameterType, @NotNull StackValue value) {
-        putValueIfNeeded(parameterType, value, -1);
+    public StackValue putValueIfNeeded(@NotNull Type parameterType, @NotNull StackValue value) {
+        return putValueIfNeeded(parameterType, value, -1);
     }
 
-    private void putValueIfNeeded(@NotNull Type parameterType, @NotNull StackValue value, int index) {
-        if (shouldPutValue(parameterType, value)) {
-            value.put(parameterType, codegen.v);
+    private StackValue putValueIfNeeded(@NotNull Type parameterType, @NotNull StackValue value, int index) {
+        try {
+            if (shouldPutValue(parameterType, value)) {
+                return value.put(parameterType, codegen.v);
+            }
+            return StackValue.none();
+        } finally {
+            afterParameterPut(parameterType, value, index);
         }
-        afterParameterPut(parameterType, value, index);
     }
 
     @Override

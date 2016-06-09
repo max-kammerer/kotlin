@@ -29,9 +29,10 @@ abstract class CallGenerator {
                 callableMethod: Callable,
                 resolvedCall: ResolvedCall<*>?,
                 callDefault: Boolean,
-                codegen: ExpressionCodegen) {
+                codegen: ExpressionCodegen,
+                generatedArgRefs: List<StackValue>) {
             if (!callDefault) {
-                callableMethod.genInvokeInstruction(codegen.v)
+                callableMethod.genInvokeInstruction(codegen, generatedArgRefs)
             }
             else {
                 (callableMethod as CallableMethod).genInvokeDefaultInstruction(codegen.v)
@@ -53,9 +54,9 @@ abstract class CallGenerator {
                 valueParameterDescriptor: ValueParameterDescriptor,
                 argumentExpression: KtExpression,
                 parameterType: Type,
-                parameterIndex: Int) {
+                parameterIndex: Int): StackValue {
             val value = codegen.gen(argumentExpression)
-            value.put(parameterType, codegen.v)
+            return value.put(parameterType, codegen.v)
         }
 
         override fun putCapturedValueOnStack(
@@ -64,8 +65,8 @@ abstract class CallGenerator {
         }
 
         override fun putValueIfNeeded(
-                parameterType: Type, value: StackValue) {
-            value.put(value.type, codegen.v)
+                parameterType: Type, value: StackValue): StackValue {
+            return value.put(value.type, codegen.v)
         }
 
         override fun reorderArgumentsIfNeeded(actualArgsWithDeclIndex: List<ArgumentAndDeclIndex>, valueParameterTypes: List<Type>) {
@@ -89,7 +90,7 @@ abstract class CallGenerator {
         }
     }
 
-    fun genCall(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen) {
+    fun genCall(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
         if (resolvedCall != null) {
             val calleeExpression = resolvedCall.call.calleeExpression
             if (calleeExpression != null) {
@@ -97,10 +98,10 @@ abstract class CallGenerator {
             }
         }
 
-        genCallInner(callableMethod, resolvedCall, callDefault, codegen)
+        genCallInner(callableMethod, resolvedCall, callDefault, codegen, generatedArgRefs)
     }
 
-    abstract fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen)
+    abstract fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>)
 
     abstract fun afterParameterPut(
             type: Type,
@@ -111,11 +112,11 @@ abstract class CallGenerator {
             valueParameterDescriptor: ValueParameterDescriptor,
             argumentExpression: KtExpression,
             parameterType: Type,
-            parameterIndex: Int)
+            parameterIndex: Int): StackValue
 
     abstract fun putValueIfNeeded(
             parameterType: Type,
-            value: StackValue)
+            value: StackValue): StackValue
 
     abstract fun putCapturedValueOnStack(
             stackValue: StackValue,

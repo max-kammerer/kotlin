@@ -50,8 +50,8 @@ class CallableMethod(
         get() = getAsmMethod().argumentTypes
 
 
-    override fun genInvokeInstruction(v: InstructionAdapter) {
-        v.visitMethodInsn(invokeOpcode, owner.internalName, getAsmMethod().name, getAsmMethod().descriptor)
+    override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+        codegen.v.visitMethodInsn(invokeOpcode, owner.internalName, getAsmMethod().name, getAsmMethod().descriptor)
     }
 
     fun genInvokeDefaultInstruction(v: InstructionAdapter) {

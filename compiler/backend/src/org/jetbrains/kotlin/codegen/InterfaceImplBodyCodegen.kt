@@ -139,7 +139,7 @@ class InterfaceImplBodyCodegen(
                             k += type.size
                         }
 
-                        method.genInvokeInstruction(iv)
+                        method.genInvokeInstruction(iv, generatedArgRefs)
                         StackValue.coerce(method.returnType, signature.returnType, iv)
                         iv.areturn(signature.returnType)
                     }

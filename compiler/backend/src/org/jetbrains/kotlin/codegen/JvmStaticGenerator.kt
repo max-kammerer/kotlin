@@ -69,7 +69,7 @@ class JvmStaticGenerator(
                                     codegen.context.accessibleDescriptor(descriptor, /* superCallTarget = */ null),
                                     false
                             )
-                            syntheticOrOriginalMethod.genInvokeInstruction(iv)
+                            syntheticOrOriginalMethod.genInvokeInstruction(iv, generatedArgRefs)
                         }
                         iv.areturn(asmMethod.returnType)
                     }

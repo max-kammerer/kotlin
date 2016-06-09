@@ -48,29 +48,29 @@ public class CallBasedArgumentGenerator extends ArgumentGenerator {
                 "Value parameters and their types mismatch in sizes: " + valueParameters.size() + " != " + valueParameterTypes.size();
     }
 
-
     @NotNull
     @Override
-    public DefaultCallArgs generate(
+    public ArgsAndDefaultCallArgs generate(
             @NotNull List<? extends ResolvedValueArgument> valueArgumentsByIndex,
             @NotNull List<? extends ResolvedValueArgument> valueArgs
     ) {
         boolean shouldMarkLineNumbers = this.codegen.isShouldMarkLineNumbers();
         this.codegen.setShouldMarkLineNumbers(false);
-        DefaultCallArgs defaultArgs = super.generate(valueArgumentsByIndex, valueArgs);
+        ArgsAndDefaultCallArgs defaultArgs = super.generate(valueArgumentsByIndex, valueArgs);
         this.codegen.setShouldMarkLineNumbers(shouldMarkLineNumbers);
         return defaultArgs;
     }
 
+    @NotNull
     @Override
-    protected void generateExpression(int i, @NotNull ExpressionValueArgument argument) {
+    protected StackValue generateExpression(int i, @NotNull ExpressionValueArgument argument) {
         ValueParameterDescriptor parameter = valueParameters.get(i);
         Type type = valueParameterTypes.get(i);
         ValueArgument valueArgument = argument.getValueArgument();
         assert valueArgument != null;
         KtExpression argumentExpression = valueArgument.getArgumentExpression();
         assert argumentExpression != null : valueArgument.asElement().getText();
-        callGenerator.genValueAndPut(parameter, argumentExpression, type, i);
+        return callGenerator.genValueAndPut(parameter, argumentExpression, type, i);
     }
 
     @Override

@@ -64,7 +64,7 @@ class InlineCodegenForDefaultBody(
         codegen.v.visitLabel(methodStartLabel)
     }
 
-    override fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen) {
+    override fun genCallInner(callableMethod: Callable, resolvedCall: ResolvedCall<*>?, callDefault: Boolean, codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
         val nodeAndSmap = InlineCodegen.createMethodNode(functionDescriptor, jvmSignature, codegen, context, callDefault)
         val childSourceMapper = InlineCodegen.createNestedSourceMapper(nodeAndSmap, sourceMapper)
 
@@ -91,13 +91,14 @@ class InlineCodegenForDefaultBody(
         throw UnsupportedOperationException("Shouldn't be called")
     }
 
-    override fun genValueAndPut(valueParameterDescriptor: ValueParameterDescriptor, argumentExpression: KtExpression, parameterType: Type, parameterIndex: Int) {
+    override fun genValueAndPut(valueParameterDescriptor: ValueParameterDescriptor, argumentExpression: KtExpression, parameterType: Type, parameterIndex: Int): StackValue {
         throw UnsupportedOperationException("Shouldn't be called")
     }
 
-    override fun putValueIfNeeded(parameterType: Type, value: StackValue) {
+    override fun putValueIfNeeded(parameterType: Type, value: StackValue): StackValue {
         //original method would be inlined directly into default impl body without any inline magic
         //so we no need to load variables on stack to further method call
+        return StackValue.none()
     }
 
     override fun putCapturedValueOnStack(stackValue: StackValue, valueType: Type, paramIndex: Int) {

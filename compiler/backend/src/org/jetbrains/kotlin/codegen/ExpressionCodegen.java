@@ -2513,7 +2513,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         List<ResolvedValueArgument> valueArguments = resolvedCall.getValueArgumentsByIndex();
         assert valueArguments != null : "Failed to arrange value arguments by index: " + resolvedCall.getResultingDescriptor();
 
-        DefaultCallArgs defaultArgs =
+        ArgsAndDefaultCallArgs defaultArgs =
                 argumentGenerator.generate(valueArguments, new ArrayList<ResolvedValueArgument>(resolvedCall.getValueArguments().values()));
 
         if (tailRecursionCodegen.isTailRecursion(resolvedCall)) {
@@ -2533,7 +2533,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             }
         }
 
-        callGenerator.genCall(callableMethod, resolvedCall, defaultMaskWasGenerated, this);
+        callGenerator.genCall(callableMethod, resolvedCall, defaultMaskWasGenerated, this, defaultArgs.getGeneratedParams());
 
         KotlinType returnType = resolvedCall.getResultingDescriptor().getReturnType();
         if (returnType != null && KotlinBuiltIns.isNothing(returnType)) {

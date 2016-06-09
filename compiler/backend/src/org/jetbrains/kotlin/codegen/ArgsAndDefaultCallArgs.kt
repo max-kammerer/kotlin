@@ -20,15 +20,20 @@ import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.org.objectweb.asm.Type
 import java.util.*
 
-class DefaultCallArgs(val size: Int) {
+class ArgsAndDefaultCallArgs(val size: Int) {
 
     val bits: BitSet = BitSet(size)
+    val generatedParams = arrayListOf<StackValue>()
 
     fun mark(index: Int) {
         assert (index < size) {
             "Mask index should be less then size, but $index >= $size"
         }
         bits.set(index)
+    }
+
+    fun addGeneratedParam(sv: StackValue) {
+        generatedParams.add(sv)
     }
 
     fun toInts(): List<Int> {

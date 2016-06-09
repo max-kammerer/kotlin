@@ -31,7 +31,7 @@ abstract class ArgumentGenerator {
      *
      * @see kotlin.reflect.jvm.internal.KCallableImpl.callBy
      */
-    open fun generate(valueArgumentsByIndex: List<ResolvedValueArgument>, actualArgs: List<ResolvedValueArgument>): DefaultCallArgs {
+    open fun generate(valueArgumentsByIndex: List<ResolvedValueArgument>, actualArgs: List<ResolvedValueArgument>): ArgsAndDefaultCallArgs {
         assert(valueArgumentsByIndex.size == actualArgs.size) {
             "Value arguments collection should have same size, but ${valueArgumentsByIndex.size} != ${actualArgs.size}"
         }
@@ -48,7 +48,7 @@ abstract class ArgumentGenerator {
             }
         }
 
-        val defaultArgs = DefaultCallArgs(valueArgumentsByIndex.size)
+        val defaultArgs = ArgsAndDefaultCallArgs(valueArgumentsByIndex.size)
 
         for (argumentWithDeclIndex in actualArgsWithDeclIndex) {
             val argument = argumentWithDeclIndex.arg
@@ -56,7 +56,7 @@ abstract class ArgumentGenerator {
 
             when (argument) {
                 is ExpressionValueArgument -> {
-                    generateExpression(declIndex, argument)
+                    defaultArgs.addGeneratedParam(generateExpression(declIndex, argument))
                 }
                 is DefaultValueArgument -> {
                     defaultArgs.mark(declIndex)
@@ -76,7 +76,7 @@ abstract class ArgumentGenerator {
         return defaultArgs
     }
 
-    protected open fun generateExpression(i: Int, argument: ExpressionValueArgument) {
+    protected open fun generateExpression(i: Int, argument: ExpressionValueArgument): StackValue {
         throw UnsupportedOperationException("Unsupported expression value argument #$i: $argument")
     }
 

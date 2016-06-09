@@ -1527,9 +1527,11 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
             this.offset = firstValueParamOffset;
         }
 
+        @NotNull
         @Override
-        public void generateExpression(int i, @NotNull ExpressionValueArgument argument) {
+        public StackValue generateExpression(int i, @NotNull ExpressionValueArgument argument) {
             generateSuperCallArgument(i);
+            return StackValue.none();
         }
 
         @Override

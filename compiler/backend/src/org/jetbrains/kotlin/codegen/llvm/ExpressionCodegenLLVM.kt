@@ -41,7 +41,6 @@ class ExpressionCodegenLLVM(
 
     val llvmFactory = stackValueFactory as LLVMStackValueFactory
 
-
     init {
         builder.positionBuilderAtEnd(entry)
         frameMap.currentVars.forEachIndexed { i, typeAndDescriptor ->
