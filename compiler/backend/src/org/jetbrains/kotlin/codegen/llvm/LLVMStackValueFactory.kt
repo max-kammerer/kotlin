@@ -114,7 +114,7 @@ class LLVMLocal(val variable: Variable, type: Type, builder: Builder) : LLVMStac
     }
 
     override fun store(value: StackValue, v: InstructionAdapter, skipReceiver: Boolean) {
-        assert(value is LLVMStackValue) { "Not LLVM stack value" }
+        //assert(value is LLVMStackValue) { "Not LLVM stack value" }
         variable.store(builder, value.put(type, v).toLLVMResult)
     }
 
@@ -123,7 +123,7 @@ class LLVMLocal(val variable: Variable, type: Type, builder: Builder) : LLVMStac
 
 class Param(val param: Value, val type: Type, builder: Builder) : LLVMStackValue(builder, type) {
     override fun putLLVMSelector(type: Type): Value {
-        throw UnsupportedOperationException()
+        return toLLVMValue()
     }
 
     override fun toLLVMValue(): Value = param
