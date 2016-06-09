@@ -923,7 +923,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         FunctionDescriptor constructor = (FunctionDescriptor) context.accessibleDescriptor(
                 CollectionsKt.single(companionObject.getConstructors()), /* superCallExpression = */ null
         );
-        generateMethodCallTo(constructor, null, codegen.v);
+        generateMethodCallTo(constructor, null, codegen);
         StackValue instance = StackValue.onStack(typeMapper.mapClass(companionObject));
         StackValue.singleton(companionObject, typeMapper).store(instance, codegen.v, true);
     }

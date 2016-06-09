@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.Synthetic
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
+import java.util.*
 
 class JvmStaticGenerator(
         val descriptor: FunctionDescriptor,
@@ -69,7 +70,7 @@ class JvmStaticGenerator(
                                     codegen.context.accessibleDescriptor(descriptor, /* superCallTarget = */ null),
                                     false
                             )
-                            syntheticOrOriginalMethod.genInvokeInstruction(iv, generatedArgRefs)
+                            syntheticOrOriginalMethod.genInvokeInstruction(codegen, Collections.emptyList())
                         }
                         iv.areturn(asmMethod.returnType)
                     }

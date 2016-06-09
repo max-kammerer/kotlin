@@ -585,7 +585,7 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
                         public void doGenerateBody(@NotNull ExpressionCodegen codegen, @NotNull JvmMethodSignature signature) {
                             markLineNumberForElement(element, codegen.v);
 
-                            generateMethodCallTo(original, accessor, codegen.v).coerceTo(signature.getReturnType(), codegen.v);
+                            generateMethodCallTo(original, accessor, codegen).coerceTo(signature.getReturnType(), codegen.v);
 
                             codegen.v.areturn(signature.getReturnType());
                         }
@@ -659,7 +659,7 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
     protected StackValue generateMethodCallTo(
             @NotNull FunctionDescriptor functionDescriptor,
             @Nullable FunctionDescriptor accessorDescriptor,
-            @NotNull InstructionAdapter iv
+            @NotNull ExpressionCodegen codegen
     ) {
         CallableMethod callableMethod = typeMapper.mapToCallableMethod(
                 functionDescriptor,
@@ -670,6 +670,7 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
         boolean hasDispatchReceiver = !isStaticDeclaration(functionDescriptor) && !isInterface(functionDescriptor.getContainingDeclaration());
         int reg = hasDispatchReceiver ? 1 : 0;
         boolean accessorIsConstructor = accessorDescriptor instanceof AccessorForConstructorDescriptor;
+        InstructionAdapter iv = codegen.v;
         if (!accessorIsConstructor && functionDescriptor instanceof ConstructorDescriptor) {
             iv.anew(callableMethod.getOwner());
             iv.dup();
@@ -691,7 +692,7 @@ public abstract class MemberCodegen<T extends KtElement/* TODO: & JetDeclaration
             }
         }
 
-        callableMethod.genInvokeInstruction(iv, generatedArgRefs);
+        callableMethod.genInvokeInstruction(codegen);
 
         return StackValue.onStack(callableMethod.getReturnType());
     }

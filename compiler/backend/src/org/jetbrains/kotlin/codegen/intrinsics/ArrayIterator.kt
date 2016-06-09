@@ -22,13 +22,13 @@ import org.jetbrains.kotlin.codegen.CallableMethod
 
 class ArrayIterator : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
-            createUnaryIntrinsicCallable(method) {
+            createUnaryIntrinsicCallable(method) { codegen, args ->
                 val methodSignature = "(${method.owner.descriptor})${returnType.descriptor}"
                 val intrinsicOwner =
                         if (AsmUtil.isPrimitive(method.owner.elementType))
                             "kotlin/jvm/internal/ArrayIteratorsKt"
                         else
                             "kotlin/jvm/internal/ArrayIteratorKt"
-                it.invokestatic(intrinsicOwner, "iterator", methodSignature, false)
+                codegen.v.invokestatic(intrinsicOwner, "iterator", methodSignature, false)
             }
 }

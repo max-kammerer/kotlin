@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.codegen.CallableMethod
 
 class ArrayOf : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
-            createIntrinsicCallable(method) {
+            createIntrinsicCallable(method) { codegen, args ->
                 //do nothing all generated as vararg
             }
 }

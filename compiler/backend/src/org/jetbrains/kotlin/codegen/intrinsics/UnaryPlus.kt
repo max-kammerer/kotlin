@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.codegen.CallableMethod
 
 class UnaryPlus : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
-            createUnaryIntrinsicCallable(method) {
+            createUnaryIntrinsicCallable(method) { codegen, args ->
                 //nothing
             }
 }

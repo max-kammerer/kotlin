@@ -19,6 +19,8 @@ package org.jetbrains.kotlin.codegen.intrinsics
 import org.jetbrains.kotlin.codegen.AsmUtil.correctElementType
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.ExpressionCodegen
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 
@@ -31,8 +33,8 @@ class ArraySet : IntrinsicMethod() {
                 method.dispatchReceiverType,
                 method.extensionReceiverType
         ) {
-            override fun invokeIntrinsic(v: InstructionAdapter) {
-                v.astore(type)
+            override fun invokeIntrinsic(codegen: ExpressionCodegen, argsRefs: List<StackValue>) {
+                codegen.v.astore(type)
             }
         }
     }

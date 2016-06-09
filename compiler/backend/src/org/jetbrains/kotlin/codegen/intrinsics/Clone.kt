@@ -23,8 +23,8 @@ import org.jetbrains.org.objectweb.asm.Opcodes
 
 class Clone : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod, isSuperCall: Boolean): Callable =
-            createUnaryIntrinsicCallable(method, OBJECT_TYPE) {
+            createUnaryIntrinsicCallable(method, OBJECT_TYPE) { codegen, args ->
                 val opcode = if (isSuperCall) Opcodes.INVOKESPECIAL else Opcodes.INVOKEVIRTUAL
-                it.visitMethodInsn(opcode, "java/lang/Object", "clone", "()Ljava/lang/Object;", false)
+                codegen.v.visitMethodInsn(opcode, "java/lang/Object", "clone", "()Ljava/lang/Object;", false)
             }
 }

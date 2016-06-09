@@ -22,8 +22,8 @@ import org.jetbrains.kotlin.codegen.CallableMethod
 
 class ArrayGet : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable =
-            createIntrinsicCallable(method) {
+            createIntrinsicCallable(method) { codegen, args ->
                 val type = correctElementType(calcReceiverType())
-                it.aload(type)
+                codegen.v.aload(type)
             }
 }

@@ -18,6 +18,8 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.ExpressionCodegen
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
@@ -30,8 +32,8 @@ class HashCode : IntrinsicMethod() {
                     nullOrObject(method.dispatchReceiverType),
                     nullOrObject(method.extensionReceiverType)
             ) {
-                override fun invokeIntrinsic(v: InstructionAdapter) {
-                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false)
+                override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+                    codegen.v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false)
                 }
             }
 }

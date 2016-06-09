@@ -17,9 +17,7 @@
 package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns.COLLECTIONS_PACKAGE_FQ_NAME
-import org.jetbrains.kotlin.codegen.AsmUtil
-import org.jetbrains.kotlin.codegen.Callable
-import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.fileClasses.internalNameWithoutInnerClasses
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
@@ -31,9 +29,9 @@ class IteratorNext : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable {
         val type = AsmUtil.unboxType(method.returnType)
         return object : IntrinsicCallable(type, listOf(), AsmTypes.OBJECT_TYPE, null) {
-            override fun invokeIntrinsic(v: InstructionAdapter) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
                 val primitiveClassName = getKotlinPrimitiveClassName(returnType)
-                v.invokevirtual(
+                codegen.v.invokevirtual(
                         getPrimitiveIteratorType(primitiveClassName).internalName,
                         "next${primitiveClassName.asString()}",
                         "()" + returnType.descriptor,

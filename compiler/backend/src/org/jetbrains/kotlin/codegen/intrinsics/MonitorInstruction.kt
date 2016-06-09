@@ -18,6 +18,8 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.ExpressionCodegen
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes.OBJECT_TYPE
 import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
@@ -34,8 +36,8 @@ class MonitorInstruction private constructor(private val opcode: Int) : Intrinsi
 
     override fun toCallable(method: CallableMethod): Callable {
         return object : IntrinsicCallable(Type.VOID_TYPE, listOf(OBJECT_TYPE), null, null) {
-            override fun invokeIntrinsic(v: InstructionAdapter) {
-                v.visitInsn(opcode)
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+                codegen.v.visitInsn(opcode)
             }
         }
     }

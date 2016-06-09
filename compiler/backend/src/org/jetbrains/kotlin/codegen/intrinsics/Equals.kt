@@ -28,7 +28,7 @@ class Equals : IntrinsicMethod() {
                     OBJECT_TYPE,
                     nullOrObject(method.dispatchReceiverType),
                     nullOrObject(method.extensionReceiverType)
-            ) {
-                AsmUtil.genAreEqualCall(it)
+            ) { codegen, args ->
+                AsmUtil.genAreEqualCall(codegen.v)
             }
 }

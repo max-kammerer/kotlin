@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.CallableMethod
+import org.jetbrains.kotlin.codegen.ExpressionCodegen
 import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.Type.*
@@ -62,8 +63,8 @@ class RangeTo : IntrinsicMethod() {
                 }
             }
 
-            override fun invokeIntrinsic(v: InstructionAdapter) {
-                v.invokespecial(returnType.internalName, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, argType, argType), false)
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
+                codegen.v.invokespecial(returnType.internalName, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, argType, argType), false)
             }
         }
     }

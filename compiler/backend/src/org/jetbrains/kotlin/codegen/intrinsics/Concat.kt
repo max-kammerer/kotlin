@@ -90,13 +90,13 @@ class Concat : IntrinsicMethod() {
                     v.invokespecial("java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false)
                 }
 
-                override fun invokeIntrinsic(v: InstructionAdapter) {
+                override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
                     // String::plus has type String.(Any?) -> String, thus we have no argument type information
                     // in case of callable reference passed to a generic function, e.g.:
                     //      charArrayOf('O', 'K').fold("", String::plus)
                     // TODO Make String::plus generic, and invoke proper StringBuilder#append.
-                    AsmUtil.genInvokeAppendMethod(v, AsmTypes.OBJECT_TYPE)
-                    v.invokevirtual("java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false)
+                    AsmUtil.genInvokeAppendMethod(codegen.v, AsmTypes.OBJECT_TYPE)
+                    codegen.v.invokevirtual("java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false)
                 }
             }
 }

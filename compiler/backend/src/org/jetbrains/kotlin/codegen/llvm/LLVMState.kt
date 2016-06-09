@@ -37,6 +37,10 @@ class LLVMState {
 
     fun getAllModulesText() = modules.values.map { it.getContent() }.joinToString("\n")
 
+    fun findFunction(fName: String): Value {
+        return name2Function[fName] ?: throw RuntimeException("Can't find function $fName");
+    }
+
     fun evaluateFunction(fName: String, vararg params: String): String {
         synchronized(LLVMState::class.java) {
             val function = name2Function[fName] ?: return "Can't find function $fName"

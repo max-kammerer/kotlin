@@ -24,9 +24,9 @@ import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 
 class Increment(private val myDelta: Int) : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod, isSuper: Boolean, resolvedCall: ResolvedCall<*>): Callable =
-            createIntrinsicCallable(method) {
+            createIntrinsicCallable(method) { codegen, args ->
                 val jetExpression = resolvedCall.call.calleeExpression
                 assert(jetExpression !is KtPrefixExpression) { "There should be postfix increment ${jetExpression!!.text}" }
-                genIncrement(returnType, myDelta, it)
+                genIncrement(returnType, myDelta, codegen.v)
             }
 }

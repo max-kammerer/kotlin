@@ -16,6 +16,8 @@
 
 package org.jetbrains.kotlin.codegen
 
+import org.jetbrains.kotlin.codegen.llvm.ExpressionCodegenLLVM
+import org.jetbrains.kotlin.codegen.llvm.toLLVMResult
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodParameterKind
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodParameterSignature
@@ -51,7 +53,12 @@ class CallableMethod(
 
 
     override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
-        codegen.v.visitMethodInsn(invokeOpcode, owner.internalName, getAsmMethod().name, getAsmMethod().descriptor)
+        if (codegen is ExpressionCodegenLLVM) {
+            codegen.builder.buildCall(codegen.state.llvmState.findFunction(getAsmMethod().name), getAsmMethod().toString(), *generatedArgRefs.map { it.toLLVMResult }.toTypedArray())
+        }
+        else {
+            codegen.v.visitMethodInsn(invokeOpcode, owner.internalName, getAsmMethod().name, getAsmMethod().descriptor)
+        }
     }
 
     fun genInvokeDefaultInstruction(v: InstructionAdapter) {

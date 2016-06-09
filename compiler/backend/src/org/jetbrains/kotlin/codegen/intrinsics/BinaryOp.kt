@@ -36,10 +36,10 @@ class BinaryOp(private val opcode: Int) : IntrinsicMethod() {
         val paramType = if (shift()) Type.INT_TYPE else operandType
 
         return createBinaryIntrinsicCallable(returnType, paramType, operandType) {
-            v ->
-                v.visitInsn(returnType.getOpcode(opcode))
+            codegen, refs ->
+                codegen.v.visitInsn(returnType.getOpcode(opcode))
             if (operandType != returnType)
-                    StackValue.coerce(operandType, returnType, v)
+                    StackValue.coerce(operandType, returnType, codegen.v)
         }
     }
 }

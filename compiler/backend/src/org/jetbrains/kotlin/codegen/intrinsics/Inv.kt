@@ -25,13 +25,14 @@ class Inv : IntrinsicMethod() {
     override fun toCallable(method: CallableMethod): Callable {
         val type = numberFunctionOperandType(method.returnType)
         return createUnaryIntrinsicCallable(method, newThisType = type) {
+            codegen, args ->
             if (returnType == Type.LONG_TYPE) {
-                it.lconst(-1)
+                codegen.v.lconst(-1)
             }
             else {
-                it.iconst(-1)
+                codegen.v.iconst(-1)
             }
-            it.xor(returnType)
+            codegen.v.xor(returnType)
         }
     }
 }

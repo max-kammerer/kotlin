@@ -35,6 +35,10 @@ interface Callable {
 
     val returnType: Type
 
+    fun genInvokeInstruction(codegen: ExpressionCodegen) {
+        genInvokeInstruction(codegen, emptyList())
+    }
+
     fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>)
 
     fun isStaticCall(): Boolean

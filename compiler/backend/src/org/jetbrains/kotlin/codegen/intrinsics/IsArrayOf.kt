@@ -36,8 +36,8 @@ class IsArrayOf : IntrinsicMethod() {
         val arrayKtType = builtIns.getArrayType(Variance.INVARIANT, elementType)
         val arrayType = typeMapper.mapType(arrayKtType)
 
-        return createIntrinsicCallable(method) {
-            it.instanceOf(arrayType)
+        return createIntrinsicCallable(method) { codegen, args ->
+            codegen.v.instanceOf(arrayType)
         }
     }
 }

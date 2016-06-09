@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.codegen.intrinsics
 
 import org.jetbrains.kotlin.codegen.Callable
 import org.jetbrains.kotlin.codegen.ExpressionCodegen
+import org.jetbrains.kotlin.codegen.StackValue
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.org.objectweb.asm.Type
@@ -28,7 +29,7 @@ class NewArray : IntrinsicMethod() {
         val jetType = resolvedCall.resultingDescriptor.returnType!!
         val type = codegen.getState().typeMapper.mapType(jetType)
         return object : IntrinsicCallable(type, listOf(Type.INT_TYPE), null, null) {
-            override fun invokeIntrinsic(v: InstructionAdapter) {
+            override fun genInvokeInstruction(codegen: ExpressionCodegen, generatedArgRefs: List<StackValue>) {
                 codegen.newArrayInstruction(jetType)
             }
         }

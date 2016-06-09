@@ -52,6 +52,7 @@ import org.jetbrains.org.objectweb.asm.Label;
 import org.jetbrains.org.objectweb.asm.Type;
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.jetbrains.kotlin.codegen.AsmUtil.*;
@@ -289,9 +290,10 @@ public abstract class StackValue {
             @Nullable CallableMethod getter,
             @Nullable CallableMethod setter,
             GenerationState state,
-            @NotNull StackValue receiver
+            @NotNull StackValue receiver,
+            @NotNull ExpressionCodegen codegen
     ) {
-        return new Property(descriptor, backingFieldOwner, getter, setter, isStaticBackingField, fieldName, type, state, receiver);
+        return new Property(descriptor, backingFieldOwner, getter, setter, isStaticBackingField, fieldName, type, state, receiver, codegen);
     }
 
     @NotNull
@@ -715,7 +717,7 @@ public abstract class StackValue {
 
         @Override
         public void putSelector(@NotNull Type type, @NotNull InstructionAdapter v) {
-            getter.genInvokeInstruction(v, generatedArgRefs);
+            getter.genInvokeInstruction(null);
             coerce(getter.getReturnType(), type, v);
         }
 
@@ -723,7 +725,7 @@ public abstract class StackValue {
         public void storeSelector(@NotNull Type topOfStackType, @NotNull InstructionAdapter v) {
             assert setter != null : "";
             coerceFrom(topOfStackType, v);
-            setter.genInvokeInstruction(v, generatedArgRefs);
+            setter.genInvokeInstruction(null);
         }
 
         @Override
@@ -1038,7 +1040,7 @@ public abstract class StackValue {
                 throw new UnsupportedOperationException("no getter specified");
             }
             CallGenerator callGenerator = getCallGenerator();
-            callGenerator.genCall(getter, resolvedGetCall, genDefaultMaskIfPresent(callGenerator), codegen, );
+            callGenerator.genCall(getter, resolvedGetCall, genDefaultMaskIfPresent(callGenerator), codegen, Collections.<StackValue>emptyList());
             coerceTo(type, v);
         }
 
@@ -1125,7 +1127,7 @@ public abstract class StackValue {
                 }
             }
 
-            getCallGenerator().genCall(setter, resolvedSetCall, false, codegen, );
+            getCallGenerator().genCall(setter, resolvedSetCall, false, codegen, Collections.<StackValue>emptyList());
             Type returnType = setter.getReturnType();
             if (returnType != Type.VOID_TYPE) {
                 pop(v, returnType);
@@ -1180,12 +1182,14 @@ public abstract class StackValue {
         private final GenerationState state;
 
         private final String fieldName;
+        private final ExpressionCodegen codegen;
 
         public Property(
                 @NotNull PropertyDescriptor descriptor, @Nullable Type backingFieldOwner,
                 @Nullable CallableMethod getter, @Nullable CallableMethod setter, boolean isStaticBackingField,
                 @Nullable String fieldName, @NotNull Type type, @NotNull GenerationState state,
-                @NotNull StackValue receiver
+                @NotNull StackValue receiver,
+                @NotNull ExpressionCodegen codegen
         ) {
             super(type, isStatic(isStaticBackingField, getter), isStatic(isStaticBackingField, setter), receiver, true);
             this.backingFieldOwner = backingFieldOwner;
@@ -1194,6 +1198,7 @@ public abstract class StackValue {
             this.descriptor = descriptor;
             this.state = state;
             this.fieldName = fieldName;
+            this.codegen = codegen;
         }
 
         @Override
@@ -1209,7 +1214,7 @@ public abstract class StackValue {
                 coerceTo(type, v);
             }
             else {
-                getter.genInvokeInstruction(v, generatedArgRefs);
+                getter.genInvokeInstruction(codegen);
                 coerce(getter.getReturnType(), type, v);
 
                 KotlinType returnType = descriptor.getReturnType();
@@ -1262,7 +1267,7 @@ public abstract class StackValue {
             }
             else {
                 coerce(topOfStackType, ArraysKt.last(setter.getParameterTypes()), v);
-                setter.genInvokeInstruction(v, generatedArgRefs);
+                setter.genInvokeInstruction(codegen);
 
                 Type returnType = setter.getReturnType();
                 if (returnType != Type.VOID_TYPE) {

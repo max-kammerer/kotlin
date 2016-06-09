@@ -39,7 +39,8 @@ class CompareTo : IntrinsicMethod() {
                 method.parameterTypes.single()
         )
         return createBinaryIntrinsicCallable(method.returnType, parameterType, parameterType, null) {
-            genInvoke(parameterType, it)
+            codegen, args ->
+            genInvoke(parameterType, codegen.v)
         }
     }
 }
