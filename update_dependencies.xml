@@ -254,6 +254,13 @@
         <!-- Rhino -->
         <get-maven-library prefix="org/mozilla" lib="rhino" version="1.7.6"/>
 
+        <get-maven-library prefix="com/nativelibs4java" lib="bridj" version="0.6.2"/>
+
+        <get src="https://github.com/max-kammerer/llvm-j/releases/download/0.1/llvm-j-0.1.jar"
+            dest="${download}/llvm-j-0.1.jar"
+            usetimestamp="true"/>
+        <copy file="${download}/llvm-j-0.1.jar" tofile="${dependencies}/llvm-j.jar" overwrite="true"/>
+
         <!-- Closure Compiler -->
         <!-- A download url taken from http://code.google.com/p/closure-compiler/wiki/BinaryDownloads -->
         <get src="http://dl.google.com/closure-compiler/compiler-20131014.zip"
